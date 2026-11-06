@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lazure</string>
+
+
+    <string name="auth_title">Lazure</string>
+    <string name="auth_login_label">Логин</string>
+    <string name="auth_login_or_email_label">Логин / Почта</string>
+    <string name="auth_email_label">Почта</string>
+    <string name="auth_password_label">Пароль</string>
+    <string name="auth_show_password">Показать пароль</string>
+    <string name="auth_hide_password">Скрыть пароль</string>
+    <string name="auth_sign_in">Войти</string>
+    <string name="auth_register">Регистрация</string>
+    <string name="auth_submit_register">Зарегистрироваться</string>
+    <string name="auth_register_title">Создать аккаунт</string>
+    <string name="auth_back_to_login">Уже есть аккаунт</string>
+    <string name="auth_forgot_password">Забыли пароль?</string>
+    <string name="auth_forgot_toast">Восстановление пароля скоро будет доступно</string>
+    <string name="auth_reset_title">Сброс пароля</string>
+    <string name="auth_reset_identifier_hint">Введите логин или почту. Мы отправим 6-значный код на email аккаунта.</string>
+    <string name="auth_reset_send_code">Отправить код</string>
+    <string name="auth_reset_code_sent_generic">Если аккаунт найден, код отправлен на почту</string>
+    <string name="auth_reset_password_title">Новый пароль</string>
+    <string name="auth_reset_password_subtitle">Для %1$s</string>
+    <string name="auth_reset_new_password">Новый пароль</string>
+    <string name="auth_reset_confirm_password">Повторите пароль</string>
+    <string name="auth_reset_save_and_login">Сохранить и войти</string>
+    <string name="auth_reset_back_to_code">Вернуться к коду</string>
+    <string name="auth_error_password_mismatch">Пароли не совпадают</string>
+    <string name="auth_error_reset_not_found">Запросите код снова</string>
+    <string name="auth_terms_line1">Входя в систему, вы принимаете</string>
+    <string name="auth_terms_link">пользовательское соглашение</string>
+    <string name="auth_privacy_link">политику конфиденциальности</string>
+    <string name="auth_error_network">Не удалось связаться с сервером. Проверьте интернет и что порт API открыт (часто 8080 или HTTPS на 443).</string>
+    <string name="auth_error_ssl">Ошибка HTTPS (сертификат). Для своего сервера используйте http://…:8080 или исправьте SSL.</string>
+    <string name="auth_error_credentials">Неверный логин или пароль</string>
+    <string name="auth_error_email_taken">Этот адрес уже зарегистрирован</string>
+    <string name="auth_error_login_taken">Этот логин уже занят</string>
+    <string name="auth_error_invalid_login">Логин: 3–32 символа, латиница, цифры и _</string>
+    <string name="auth_error_weak_password">Пароль слишком короткий (минимум 8 символов)</string>
+    <string name="auth_error_generic">Что-то пошло не так. Попробуйте ещё раз.</string>
+    <string name="auth_error_invalid_code">Неверный код</string>
+    <string name="auth_error_code_expired">Срок действия кода истёк. Запросите новый.</string>
+    <string name="auth_error_rate_limited">Подождите минуту перед повторной отправкой</string>
+    <string name="auth_code_sent">Код отправлен на почту</string>
+    <string name="auth_verify_title">Подтверждение</string>
+    <string name="auth_verify_subtitle">Введите 6-значный код, который мы отправили на %1$s</string>
+    <string name="auth_verify_confirm">Подтвердить</string>
+    <string name="auth_verify_resend">Отправить код снова</string>
+    <string name="auth_verify_back">Изменить логин, почту или пароль</string>
+    <string name="auth_continue_register">Продолжить</string>
+
+
+    <string name="post_register_message">Добро пожаловать!</string>
+
+
+    <string name="onboarding_hero_headline">Ваши данные принадлежат вам.</string>
+    <string name="onboarding_rich_part1">Lazure хранит заметки на вашем устройстве, поэтому вы можете быстро и конфиденциально работать с ними</string>
+    <string name="onboarding_rich_offline">\u0020даже без сети</string>
+    <string name="onboarding_rich_part2">. Ваши данные хранятся в защищённой локальной папке под названием</string>
+    <string name="onboarding_rich_vault">\u0020хранилище</string>
+    <string name="onboarding_rich_suffix">.</string>
+    <string name="onboarding_choose_folder">Выбрать папку хранилища</string>
+    <string name="onboarding_create_vault">Создать новое хранилище</string>
+    <string name="onboarding_use_existing">Использовать существующее</string>
+
+
+    <string name="create_vault_headline">Выберите имя для вашего хранилища</string>
+    <string name="create_vault_name_label">Имя хранилища</string>
+    <string name="create_vault_location_section">Местоположение хранилища</string>
+    <string name="create_vault_storage_device_title">Хранилище устройства</string>
+    <string name="create_vault_storage_device_hint">• Разрешает другим приложениям доступ к данным Lazure.</string>
+    <string name="create_vault_storage_app_title">Хранилище приложения</string>
+    <string name="create_vault_storage_app_hint">• Процесс удаления Lazure также удалит все ваши данные.</string>
+    <string name="create_vault_submit">Создать хранилище</string>
+    <string name="create_vault_error_exists">Хранилище с таким именем уже есть. Выберите другое имя.</string>
+
+
+    <string name="home_ask_lazure_hint">Уточнить у Lazure...</string>
+    <string name="empty_usage_label">Активность</string>
+    <string name="empty_usage_period">30 дней</string>
+    <string name="empty_chat_continue_label">Продолжить</string>
+    <string name="empty_chat_last_note_label">Последняя заметка</string>
+    <string-array name="home_empty_chat_quick_prompts">
+        <item>Суммируй мои заметки</item>
+        <item>Составь план на день</item>
+        <item>О чём я писал недавно?</item>
+        <item>Найди связи между заметками</item>
+        <item>Помоги сформулировать идею</item>
+        <item>Что важного в vault?</item>
+    </string-array>
+    <string-array name="home_empty_chat_prompts_morning">
+        <item>Доброе утро. О чём поговорим?</item>
+        <item>С чего начнём это утро?</item>
+        <item>Утро — хорошее время для идей</item>
+        <item>Что задумали на сегодня?</item>
+    </string-array>
+    <string-array name="home_empty_chat_prompts_day">
+        <item>Чем займёмся сегодня?</item>
+        <item>Что на повестке дня?</item>
+        <item>Как проходит ваш день?</item>
+        <item>Чем могу помочь днём?</item>
+    </string-array>
+    <string-array name="home_empty_chat_prompts_evening">
+        <item>Добрый вечер. Что обсудим?</item>
+        <item>Как прошёл день?</item>
+        <item>Вечер — время подвести итоги</item>
+        <item>О чём поговорим этим вечером?</item>
+    </string-array>
+    <string-array name="home_empty_chat_prompts_night">
+        <item>Тихая ночь — о чём подумаем?</item>
+        <item>Что на уме этой ночью?</item>
+    </string-array>
+    <string name="cd_attach">Вложение</string>
+    <string name="cd_attach_note">Прикрепить заметку</string>
+    <string name="cd_voice_input">Голосовой ввод</string>
+    <string name="cd_close">Закрыть</string>
+    <string name="chat_add_to_chat">Добавить в чат</string>
+    <string name="chat_add_camera">Камера</string>
+    <string name="chat_add_photos">Фото</string>
+    <string name="chat_add_files">Файлы</string>
+    <string name="chat_pick_note">Прикрепить заметку</string>
+    <string name="chat_pick_model">Модель</string>
+    <string name="chat_pick_model_device_hint">Память устройства: %1$d МБ · рекомендуем оптимальный вариант</string>
+    <string name="chat_models_cloud">Облачные</string>
+    <string name="chat_models_local">Локальные</string>
+    <string name="chat_model_recommended">Рекомендуется</string>
+    <string name="chat_model_download">Скачать</string>
+    <string name="chat_model_download_progress">%1$s из %2$s</string>
+    <string name="chat_model_downloading">Загрузка модели…</string>
+    <string name="chat_model_download_done">Модель загружена</string>
+    <string name="chat_model_download_failed">Не удалось загрузить: %1$s</string>
+    <string name="chat_model_download_wifi">Для загрузки нужен Wi‑Fi</string>
+    <string name="chat_model_download_storage">Недостаточно места на устройстве</string>
+    <string name="chat_model_download_paused">Загрузка на паузе</string>
+    <string name="chat_model_download_pause">Пауза</string>
+    <string name="chat_model_download_resume">Продолжить</string>
+    <string name="chat_model_download_cancel">Отменить</string>
+    <string name="chat_model_download_channel">Загрузка моделей</string>
+    <string name="chat_model_download_channel_desc">Фоновая загрузка локальных моделей</string>
+    <string name="chat_model_download_notification">Загрузка %1$s</string>
+    <string name="chat_model_download_paused_notification">%1$s — на паузе</string>
+    <string name="chat_model_delete">Удалить</string>
+    <string name="chat_model_delete_confirm_title">Удалить модель?</string>
+    <string name="chat_model_delete_confirm_body">Файл %1$s будет удалён с устройства.</string>
+    <string name="chat_model_delete_done">Модель удалена</string>
+    <string name="chat_model_incomplete_removed">Неполная загрузка удалена: %1$s</string>
+    <string name="chat_pick_note_empty">Нет заметок — создайте в меню слева</string>
+    <string name="cd_open_menu">Открыть меню хранилища</string>
+    <string name="cd_open_models">Выбор локальной модели</string>
+    <string name="home_drawer_new_note">Новая заметка</string>
+    <string name="home_drawer_no_files">Нет файлов</string>
+    <string name="home_drawer_account_guest">Не авторизован</string>
+    <string name="home_drawer_account_default">Мой аккаунт</string>
+    <string name="home_drawer_plan_free">Free plan</string>
+    <string name="home_drawer_plan_pro">Pro plan</string>
+    <string name="cd_open_settings">Настройки</string>
+    <string name="home_model_label">Модель</string>
+    <string name="home_local_model_section">Локальная модель</string>
+    <string name="home_local_model_url_hint">Ссылка на модель (.litertlm)</string>
+    <string name="home_gguf_section">@string/home_local_model_section</string>
+    <string name="home_gguf_url_hint">@string/home_local_model_url_hint</string>
+    <string name="home_gguf_download">Скачать</string>
+    <string name="home_gguf_url_empty">Вставьте ссылку на модель</string>
+    <string name="home_gguf_download_ok">Модель сохранена и выбрана</string>
+    <string name="home_gguf_download_fail">Не удалось скачать</string>
+    <string name="home_gguf_none">Не выбрана</string>
+    <string name="home_gguf_no_files">Список пуст — выберите пресет выше или вставьте ссылку</string>
+    <string name="home_gguf_selected">Модель выбрана</string>
+    <string name="home_gguf_integrity_fail">Проверка целостности не пройдена: %1$s</string>
+
+
+    <string name="notes_title">Заметки</string>
+    <string name="notes_reindex">Переиндексация</string>
+    <string name="notes_chat">Чат</string>
+    <string name="notes_settings">Настройки</string>
+
+
+    <string name="editor_placeholder">Markdown</string>
+    <string name="editor_default_title">Заметка</string>
+    <string name="editor_preview">Просмотр</string>
+    <string name="editor_edit">Редактировать</string>
+    <string name="editor_save_failed">Не удалось сохранить заметку (нет доступа к файлу или сбой хранилища)</string>
+    <string name="editor_toast_open_system_folder_picker">Нет постоянного доступа к папке vault. В системном диалоге выберите ту же папку, где лежат заметки — Android снова выдаст разрешение.</string>
+    <string name="editor_toast_grant_folder_on_save">Нужен доступ к папке. Выберите ту же папку vault — сохранение повторится автоматически.</string>
+    <string name="editor_toast_vault_access_saved">Доступ к папке обновлён</string>
+    <string name="editor_toast_still_no_access">Доступ не восстановлен. Выберите именно ту папку, где находится эта заметка.</string>
+    <string name="cd_back">Назад</string>
+
+
+    <string name="chat_title">Чат</string>
+    <string name="chat_mode_local">Локально</string>
+    <string name="chat_mode_cloud">Облако</string>
+    <string name="chat_hint_cloud">В облачном режиме выбранный контекст хранилища отправляется на ваш сервер и к провайдеру ИИ.</string>
+    <string name="chat_hint_cloud_openai">OpenAI-совместимый endpoint (Timeweb Agent и др.): укажите базовый URL с /v1 и API-ключ в настройках. Секреты не храните в коде репозитория.</string>
+    <string name="chat_hint_cloud_gemini">Google Gemini: ключ AI Studio в настройках. Запросы идут в generativelanguage.googleapis.com.</string>
+    <string name="chat_hint_local">Локальный режим: ответы на устройстве через LiteRT-LM (Google). Скачайте модель из списка справа вверху.</string>
+    <string name="chat_message_placeholder">Сообщение</string>
+    <string name="chat_send">Отправить</string>
+    <string name="chat_copy">Копировать</string>
+    <string name="chat_history_title">Чаты</string>
+    <string name="chat_history_new">Новый</string>
+    <string name="chat_history_empty">История пуста — начните новый чат.</string>
+    <string name="chat_history_save_note">Сохранить чат как заметку</string>
+    <string name="chat_history_delete">Удалить чат</string>
+    <string name="time_just_now">только что</string>
+    <string name="time_minutes_ago">%1$d мин назад</string>
+    <string name="time_hours_ago">%1$d ч назад</string>
+    <string name="time_days_ago">%1$d дн назад</string>
+    <string name="chat_share">Поделиться</string>
+    <string name="cd_share">Поделиться</string>
+    <string name="cd_copy">Копировать ответ</string>
+    <string name="chat_copied">Скопировано</string>
+    <string name="code_copied">Код скопирован</string>
+    <string name="cd_copy_code">Копировать код</string>
+    <string name="chat_error_setup">Укажите адрес API и войдите в настройках.</string>
+    <string name="chat_error_setup_openai">Укажите базовый URL и API-ключ OpenAI-совместимого провайдера в настройках.</string>
+    <string name="chat_error_setup_gemini">Укажите ключ Gemini (AI Studio) в настройках.</string>
+    <string name="chat_error_cloud">Ошибка облака: %1$s</string>
+    <string name="chat_error_quota_exhausted">Вы превысили лимит использования токенов облачной ИИ-модели. Установите локальную модель в меню выбора модели — ею можно пользоваться без ограничений по токенам.</string>
+    <string name="chat_error_cloud_ai_disabled">Облачный ИИ временно недоступен на сервере. Установите локальную модель или повторите позже.</string>
+    <string name="chat_error_generic">Не удалось получить ответ. Проверьте сеть и настройки.</string>
+    <string name="chat_error_offline_cloud">Нет подключения к сети. Облачный режим недоступен — переключитесь на локальную модель.</string>
+    <string name="chat_offline_cloud_hint">Нет сети — доступен только локальный режим</string>
+    <string name="chat_error_server">Сервер Lazure AI временно недоступен. Повторите позже или установите локальную модель.</string>
+    <string name="chat_error_ai_provider">Облачная модель не ответила. Повторите запрос или установите локальную ИИ без ограничений.</string>
+    <string name="chat_role_user">Пользователь</string>
+    <string name="chat_role_assistant">Ассистент</string>
+
+
+    <string name="settings_title">Настройки</string>
+    <string name="settings_api_url">Адрес API</string>
+    <string name="settings_save_api">Сохранить адрес</string>
+    <string name="settings_toast_api_saved">Адрес сохранён</string>
+    <string name="settings_email">Электронная почта</string>
+    <string name="settings_password">Пароль</string>
+    <string name="settings_login">Войти</string>
+    <string name="settings_toast_login_ok">Вход выполнен</string>
+    <string name="settings_toast_login_fail">Не удалось войти</string>
+    <string name="settings_cloud_none">Облако: не авторизованы</string>
+    <string name="settings_cloud_ok">Облако: токен сохранён на устройстве</string>
+    <string name="settings_passphrase">Фраза для снимков (E2EE)</string>
+    <string name="settings_save_passphrase">Сохранить фразу</string>
+    <string name="settings_toast_passphrase_saved">Фраза сохранена локально</string>
+    <string name="settings_upload_snapshot">Загрузить зашифрованный снимок</string>
+    <string name="settings_restore_snapshot">Восстановить последний снимок</string>
+    <string name="settings_toast_pick_vault">Сначала выберите хранилище</string>
+    <string name="settings_toast_login_first">Сначала войдите</string>
+    <string name="settings_toast_passphrase_required">Нужна фраза шифрования</string>
+    <string name="settings_toast_upload_ok">Снимок загружен</string>
+    <string name="settings_toast_upload_fail">Ошибка загрузки: %1$s</string>
+    <string name="settings_toast_restore_ok">Восстановление выполнено</string>
+    <string name="settings_toast_restore_fail">Ошибка восстановления: %1$s</string>
+    <string name="settings_restore_hint">Перезаписывает совпадающие файлы в корне хранилища</string>
+    <string name="settings_section_vault">Хранилище</string>
+    <string name="settings_vault_current_label">Текущее хранилище</string>
+    <string name="settings_vault_not_set">Не выбрано</string>
+    <string name="settings_change_vault">Сменить хранилище</string>
+    <string name="settings_change_vault_title">Хранилище заметок</string>
+    <string name="settings_change_vault_hint">Выберите существующее хранилище на устройстве или создайте новое. Заметки остаются в папке приложения.</string>
+    <string name="settings_create_new_vault">Создать новое хранилище</string>
+    <string name="settings_existing_vaults">На этом устройстве</string>
+    <string name="settings_no_vaults_yet">Пока нет хранилищ — создайте первое.</string>
+    <string name="settings_vault_current">Сейчас используется</string>
+    <string name="settings_toast_vault_changed">Хранилище переключено</string>
+    <string name="settings_section_quota">Облачный AI</string>
+    <string name="settings_quota_title">Квота токенов</string>
+    <string name="settings_quota_loading">Загрузка квоты…</string>
+    <string name="settings_quota_error">Не удалось загрузить лимит с сервера</string>
+    <string name="settings_quota_error_401">Сессия устарела. Выйдите из аккаунта и войдите снова.</string>
+    <string name="settings_quota_error_404">Сервер устарел (нет /api/me/account). Обновите API на VDS.</string>
+    <string name="settings_quota_error_http">Ошибка сервера (HTTP %1$d)</string>
+    <string name="settings_quota_error_network">Нет связи с сервером. Проверьте интернет и что API доступен по HTTP.</string>
+    <string name="settings_quota_dev_stub">Локальный вход (debug): квота с сервера недоступна</string>
+    <string name="settings_quota_cached_hint">Показаны сохранённые данные. Нажмите «Повторить» для обновления.</string>
+    <string name="settings_quota_refresh_failed">Не удалось обновить квоту. Проверьте интернет.</string>
+    <string name="settings_quota_retry">Повторить</string>
+    <string name="settings_quota_unlimited">Без лимита</string>
+    <string name="settings_quota_daily_reset">Счётчик токенов обнуляется каждый день в 0:00 (МСК).</string>
+    <string name="settings_plan_compare_title">Чем отличаются тарифы</string>
+    <string name="settings_plan_free_title">Бесплатный</string>
+    <string name="settings_plan_pro_title">Pro</string>
+    <string name="settings_plan_pro_price">%1$d ₽/мес</string>
+    <string name="settings_plan_local_unlimited">Локальные AI‑модели без ограничений</string>
+    <string name="settings_plan_cloud_daily">Облачный AI — %1$s в день</string>
+    <string name="settings_plan_quota_amount">%1$s токенов</string>
+    <string name="settings_subscription_payments_button">История платежей</string>
+    <string name="settings_subscription_until">Pro до %1$s</string>
+    <string name="settings_subscription_forever">Pro навсегда</string>
+    <string name="settings_subscription_active_forever_hint">Подписка Pro без срока окончания.</string>
+    <string name="settings_subscription_active_hint">Подписка активна. Продление добавляет дни к текущему сроку.</string>
+    <string name="settings_subscription_payments_title">История платежей</string>
+    <string name="settings_subscription_payments_empty">Платежей пока нет</string>
+    <string name="settings_payment_status_confirmed">Оплачен</string>
+    <string name="settings_payment_status_pending">Ожидает</string>
+    <string name="settings_payment_status_canceled">Отменён</string>
+    <string name="settings_payment_status_failed">Ошибка</string>
+    <string name="settings_payment_row">%1$s · %2$d ₽ · %3$s</string>
+    <string name="settings_subscription_offer">Lazure Pro — %1$d ₽ в месяц.</string>
+    <string name="settings_subscription_buy_button">Оформить Pro — %1$d ₽/мес</string>
+    <string name="settings_subscription_renew_button">Продлить Pro — %1$d ₽/мес</string>
+    <string name="settings_subscription_sign_in">Войдите в аккаунт, чтобы оформить подписку.</string>
+    <string name="settings_subscription_payment_opened">Открылся экран оплаты. После оплаты вернитесь и нажмите «Повторить».</string>
+    <string name="settings_subscription_billing_unavailable">Оплата на сервере не настроена. Добавьте ключи Platega в .env API.</string>
+    <string name="settings_subscription_checkout_error">Не удалось создать счёт. Попробуйте позже.</string>
+    <string name="settings_section_account">Аккаунт</string>
+    <string name="settings_sessions_title">Где вы вошли</string>
+    <string name="settings_sessions_subtitle">Активные сессии на ваших устройствах. Завершите те, которым не доверяете.</string>
+    <string name="settings_sessions_current">Это устройство</string>
+    <string name="settings_sessions_last_seen">Был(а) активен: %1$s</string>
+    <string name="settings_sessions_revoke">Завершить</string>
+    <string name="settings_sessions_revoke_failed">Не удалось завершить сессию</string>
+    <string name="settings_sessions_empty">Активных сессий пока нет. Перезайдите в аккаунт, чтобы увидеть это устройство.</string>
+    <string name="settings_sessions_load_failed">Не удалось загрузить список сессий</string>
+    <string name="settings_sessions_unknown_device">Неизвестное устройство</string>
+    <string name="settings_account_signed_out">Не авторизованы</string>
+    <string name="settings_logout">Выйти из аккаунта</string>
+    <string name="settings_toast_logout">Вы вышли</string>
+    <string name="settings_cloud_llm_section">Облачный чат (не Lazure API)</string>
+    <string name="settings_cloud_provider_lazure">Сервер Lazure</string>
+    <string name="settings_cloud_provider_openai">OpenAI-совместимый</string>
+    <string name="settings_cloud_provider_gemini">Google Gemini</string>
+    <string name="settings_openai_base">Базовый URL (…/v1)</string>
+    <string name="settings_openai_base_hint">Timeweb Agent: URL до /v1, например …/agents/ID/v1. Можно задать в local.properties как OPENAI_COMPAT_BASE_URL</string>
+    <string name="settings_openai_key">API-ключ (Bearer)</string>
+    <string name="settings_openai_key_hint">JWT Timeweb: вставьте сюда или в local.properties: OPENAI_COMPAT_API_KEY=…</string>
+    <string name="settings_openai_model">Имя модели</string>
+    <string name="settings_gemini_key">Ключ Gemini (AI Studio)</string>
+    <string name="settings_gemini_key_hint">Для Google Gemini нужен ключ из AI Studio. Опционально: в корне проекта в local.properties добавьте GEMINI_API_KEY=… (файл не коммитится). Строка JWT от других провайдеров сюда не подходит — для них используйте OpenAI-совместимый режим.</string>
+    <string name="settings_gemini_model">Модель Gemini</string>
+    <string name="settings_save_cloud_llm">Сохранить облачный ИИ</string>
+    <string name="settings_toast_cloud_llm_saved">Настройки облачного ИИ сохранены</string>
+    <string name="settings_local_llm_section">Локальная модель (LiteRT-LM)</string>
+    <string name="settings_llm_temperature">Temperature</string>
+    <string name="settings_llm_top_p">Top P</string>
+    <string name="settings_llm_max_tokens">Max tokens</string>
+    <string name="settings_llm_context">Размер контекста</string>
+    <string name="settings_llm_threads">Потоки CPU</string>
+    <string name="settings_llm_compute_backend">Ускорение модели</string>
+    <string name="settings_llm_compute_gpu">GPU (OpenCL)</string>
+    <string name="settings_llm_compute_cpu">CPU</string>
+    <string name="settings_llm_compute_cpu_only_build">CPU</string>
+    <string name="settings_llm_compute_cpu_only_build_hint">GPU встроен в LiteRT-LM. Если ускорение недоступно, приложение автоматически переключится на CPU.</string>
+    <string name="settings_llm_compute_gpu_available">GPU доступен на этом устройстве</string>
+    <string name="settings_llm_compute_gpu_unavailable">GPU недоступен — используется CPU</string>
+    <string name="settings_llm_compute_gpu_device">GPU: %1$s</string>
+    <string name="settings_local_web_research">Веб-поиск для локальной модели</string>
+    <string name="settings_local_web_research_hint">Перед ответом подтягивает справку из интернета (погода, поиск). Модель остаётся на устройстве. Включено по умолчанию.</string>
+    <string name="settings_local_web_research_endpoint">URL поиска</string>
+    <string name="settings_local_web_research_endpoint_default">DuckDuckGo (по умолчанию)</string>
+    <string name="settings_local_web_research_endpoint_hint">URL должен содержать {query}. Подходит DuckDuckGo, SearXNG и другие JSON API.</string>
+    <string name="settings_local_web_research_endpoint_dialog_hint">Пример: https://search.example.com/search?q={query}&amp;format=json</string>
+    <string name="settings_save_llm_params">Сохранить параметры модели</string>
+    <string name="settings_toast_llm_params_saved">Параметры сохранены</string>
+    <string name="settings_toast_llm_params_invalid">Проверьте числа (temperature, top P, …)</string>
+
+    <string name="settings_privacy_section">Конфиденциальность и поддержка</string>
+    <string name="settings_privacy_policy_link">Политика конфиденциальности</string>
+    <string name="settings_terms_link">Пользовательское соглашение</string>
+    <string name="settings_support_title">Связь</string>
+    <string name="settings_local_model_cellular">Скачивать модели по мобильной сети</string>
+    <string name="settings_local_model_cellular_hint">Разрешить загрузку локальных моделей по мобильной сети</string>
+    <string name="settings_gguf_cellular">@string/settings_local_model_cellular</string>
+    <string name="settings_gguf_cellular_hint">@string/settings_local_model_cellular_hint</string>
+
+    <string name="settings_section_reading">Чтение</string>
+    <string name="settings_section_chat">Чат и ИИ</string>
+    <string name="settings_section_appearance">Внешний вид</string>
+    <string name="settings_preview_label">Предпросмотр</string>
+    <string name="settings_font_label">Шрифт</string>
+    <string name="settings_font_size">Размер шрифта</string>
+    <string name="settings_font_weight">Начертание</string>
+    <string name="settings_stream_replies">Потоковый ответ</string>
+    <string name="settings_stream_replies_hint">Текст появляется по мере генерации модели</string>
+    <string name="settings_chat_haptics">Тактильная отдача</string>
+    <string name="settings_chat_haptics_hint">Вибрация при отправке сообщения и завершении ответа</string>
+    <string name="settings_typewriter">Эффект печати</string>
+    <string name="settings_typewriter_hint">Мягкая анимация для ответов, пришедших целиком</string>
+    <string name="settings_semantic_search">Поиск по смыслу</string>
+    <string name="settings_semantic_search_hint">Искать релевантные заметки в vault для контекста чата</string>
+    <string name="settings_auto_title_chats">Авто-название чатов</string>
+    <string name="settings_auto_title_chats_hint">ИИ предлагает заголовок первому сообщению</string>
+    <string name="settings_compress_images">Сжимать фото</string>
+    <string name="settings_compress_images_hint">Меньший размер вложений в чате</string>
+    <string name="settings_theme">Тема</string>
+    <string name="settings_theme_system">Системная</string>
+    <string name="settings_theme_dark">Тёмная</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_dynamic_color">Material You</string>
+    <string name="settings_dynamic_color_hint">Цвета из обоев (Android 12+)</string>
+
+    <string name="editor_backlinks_title">Ссылки на эту заметку</string>
+    <string name="editor_backlinks_empty">Никто не ссылается</string>
+    <string name="editor_delete">Удалить заметку</string>
+    <string name="editor_delete_confirm_title">Удалить заметку?</string>
+    <string name="editor_delete_confirm_body">Файл «%1$s» будет удалён без возможности восстановления.</string>
+    <string name="editor_delete_confirm">Удалить</string>
+    <string name="editor_delete_cancel">Отмена</string>
+    <string name="editor_delete_failed">Не удалось удалить заметку</string>
+
+
+    <string name="settings_language">Язык</string>
+    <string name="settings_language_hint">Язык интерфейса приложения</string>
+    <string name="lang_system">Как в системе</string>
+    <string name="lang_english">English</string>
+    <string name="lang_russian">Русский</string>
+    <string name="thinking_label">Думаю…</string>
+    <string name="drawer_settings">Настройки</string>
+    <string name="toast_attach_failed">Не удалось прикрепить: %1$s</string>
+    <string name="toast_speech_unavailable">Голосовой ввод недоступен на этом устройстве</string>
+    <string name="toast_note_updated">Заметка обновлена</string>
+    <string name="toast_note_save_failed">Не удалось сохранить заметку</string>
+    <string name="toast_note_appended">Изменения добавлены к заметке</string>
+    <string name="action_open_created_note">Открыть созданную заметку</string>
+    <string name="chat_sources_label">Источники</string>
+    <string name="chat_note_created_chip">Заметка создана</string>
+    <string name="chat_note_created_chip_named">Заметка создана · %1$s</string>
+    <string name="toast_renamed">Переименовано</string>
+    <string name="toast_deleted">Удалено</string>
+    <string name="toast_delete_failed">Не удалось удалить</string>
+    <string name="action_delete">Удалить</string>
+    <string name="note_sources_title">Источники заметок</string>
+    <string name="suggestion_create_note">Создать заметку: %1$s</string>
+    <string name="suggestion_create_note_action">Создать заметку</string>
+    <string name="suggestion_edit_for">Изменить для %1$s</string>
+    <string name="action_replace">Заменить</string>
+    <string name="action_append">Добавить</string>
+    <string name="action_open">Открыть</string>
+    <string name="toast_rename_save_failed">Не удалось сохранить переименование: %1$s</string>
+    <string name="sheet_note_chat_hint">Спросите об этой заметке…</string>
+    <string name="sheet_loading">Загрузка…</string>
+    <string name="sheet_input_hint">Сообщение</string>
+    <string name="sheet_api_key_missing">Укажите API-ключ в настройках</string>
+    <string name="sheet_error_generic">Что-то пошло не так</string>
+    <string name="sheet_empty_response">Пустой ответ модели</string>
+    <string name="sheet_apply_edits_user">Применить правки (пользователь)</string>
+    <string name="toast_camera_unavailable">Камера недоступна</string>
+    <string name="graph_title">Граф заметок</string>
+    <string name="graph_search_hint">Поиск узла…</string>
+    <string name="graph_building">Строится граф…</string>
+    <string name="graph_neighbors">Связей: %1$d</string>
+    <string name="graph_empty_toast">Недостаточно данных для графа</string>
+    <string name="graph_share_title">Поделиться графом</string>
+    <string name="llm_pick_model_hint">Выберите облачную или локальную модель</string>
+    <string name="llm_model_not_found">Модель не найдена: %1$s</string>
+    <string name="llm_native_unavailable_prefix">Нативный движок недоступен: </string>
+    <string name="llm_no_vault_notes">Нет заметок в хранилище: %1$s</string>
+    <string name="llm_no_matches">Нет совпадений: %1$s</string>
+    <string name="llm_local_summary_header">Локальная модель · кратко</string>
+    <string name="note_created_toast">Заметка «%1$s» создана</string>
+    <string name="toast_rename_failed">Не удалось переименовать</string>
+    <string name="toast_create_note_failed">Не удалось создать заметку</string>
+    <string name="llm_choose_model_hint">Выберите модель: кнопка с иконкой хранилища справа вверху в чате.</string>
+    <string name="llm_stub_no_vault">Локальная модель пока не подключена, и в хранилище нет заметок для «%1$s». Создайте заметки или выберите облачную модель сверху справа.</string>
+    <string name="llm_stub_empty_search">В хранилище ничего не нашлось по запросу «%1$s».</string>
+    <string name="llm_stub_no_match">По запросу «%1$s» в хранилище совпадений не нашлось.\n\nПодскажите больше деталей или попробуйте облачную модель (иконка хранилища сверху справа).</string>
+    <string name="llm_stub_from_notes">На основе ваших заметок:</string>
+    <string name="llm_stub_note_fallback">Заметка %1$d</string>
+    <string name="llm_stub_footer">(Локальный поиск без LLM. Для развёрнутого ответа подключите облачную модель сверху справа.)</string>
+    <string name="sheet_note_chat_examples">Спросите по заметке. Например: «Перепиши покороче», «Добавь раздел про…», «Что не так с этим?»</string>
+    <string name="sheet_error_with_message">Ошибка: %1$s</string>
+    <string name="settings_preview_sample">Lazure помогает думать яснее. Хорошая типографика делает длинные заметки легче для чтения — выберите шрифт и размер, которые вам комфортны.</string>
+    <string name="llm_native_search_fallback">LiteRT-LM недоступен — используется локальный поиск по заметкам. Скачайте модель из списка для полноценного offline-ответа.\n\n</string>
+    <string name="llm_model_not_found_detail">Модель «%1$s» не найдена. Скачайте её в списке справа или обновите выбор.</string>
+
+    <string name="default_api_base"></string>
+    <string name="privacy_policy_url"></string>
+    <string name="terms_url"></string>
+    <string name="support_email"></string>
+
+    <string name="local_gen_loading">загрузка…</string>
+    <string name="local_gen_weights_loading">веса…</string>
+    <string name="local_gen_prefill">промпт…</string>
+
+    <string name="note_untitled">Без названия</string>
+    <string name="chat_title_new">Новый чат</string>
+    <string name="chat_title_default">Чат</string>
+    <string name="cd_remove_note">Убрать заметку</string>
+    <string name="cd_new_chat">Новый чат</string>
+    <string name="chat_model_cloud_subtitle">Облачный ассистент</string>
+    <string name="chat_model_cloud_subtitle_long">Облачный ассистент (сервер Lazure)</string>
+    <string name="chat_model_local_subtitle">Локально · %1$s</string>
+    <string name="chat_model_local_gguf_subtitle">@string/chat_model_local_subtitle</string>
+    <string name="vault_error_unavailable">Хранилище недоступно — переоткройте папку в настройках</string>
+    <string name="vault_error_no_write">Нет прав на запись в хранилище — переоткройте папку</string>
+    <string name="drawer_rename_note_title">Переименовать заметку</string>
+    <string name="drawer_rename_field_label">Имя файла</string>
+    <string name="menu_rename">Переименовать</string>
+    <string name="action_save">Сохранить</string>
+    <string name="toast_save_failed">Не удалось сохранить</string>
+    <string name="toast_chat_saved_as_note">Чат сохранён как заметка</string>
+    <string name="speech_recognition_prompt">Говорите…</string>
+    <string name="chat_empty_model_response">Пустой ответ модели (фильтры безопасности или ошибка сети).</string>
+    <string name="chat_model_delete_file_failed">не удалось удалить файл</string>
+
+<string name="graph_stats_subtitle">%1$d узлов · %2$d связей · %3$d кластеров</string>
+    <string name="graph_no_wiki_notes">Нет заметок со ссылками [[…]]</string>
+    <string name="cd_clear">Очистить</string>
+    <string name="cd_rebuild">Перестроить</string>
+    <string name="cd_send">Отправить</string>
+    <string name="cd_hide">Скрыть</string>
+    <string name="editor_format_bold">Жирный</string>
+    <string name="editor_format_italic">Курсив</string>
+    <string name="editor_format_heading">Заголовок</string>
+    <string name="editor_format_code">Код</string>
+    <string name="editor_format_list">Список</string>
+    <string name="editor_format_task">Список дел</string>
+    <string name="sheet_action_apply">Применить</string>
+    <string name="note_sources_short">Источники</string>
+    <string name="suggestion_changes_for">Изменения для «%1$s»</string>
+    <string name="action_append_to_end">В конец</string>
+    <string name="editor_toast_saved_rename_failed">Текст сохранён, но переименовать не удалось: %1$s</string>
+    <string name="sheet_files_question">Что на этих файлах?</string>
+    <string name="cd_search">Поиск</string>
+    <string name="graph_focus">Фокус</string>
+    <string name="graph_reset_focus">Сбросить</string>
+    <string name="graph_is_empty">Граф пуст</string>
+    <string name="chat_error_no_response">нет ответа</string>
+    <string name="sheet_api_key_note_chat">API-ключ не настроен (Настройки → Чат и AI).</string>
+    <string-array name="thinking_phrases">
+        <item>Листаю заметки…</item>
+        <item>Собираю контекст…</item>
+        <item>Связываю идеи…</item>
+        <item>Ищу в vault…</item>
+        <item>Читаю между строк…</item>
+        <item>Подбираю слова…</item>
+        <item>Сверяю факты…</item>
+        <item>Строю ответ…</item>
+        <item>Cooking…</item>
+        <item>Ещё мгновение…</item>
+    </string-array>
+</resources>
+
+

@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lazure</string>
+
+
+    <string name="auth_title">Lazure</string>
+    <string name="auth_login_label">Login</string>
+    <string name="auth_login_or_email_label">Login / Mail</string>
+    <string name="auth_email_label">Mail</string>
+    <string name="auth_password_label">Password</string>
+    <string name="auth_show_password">Show password</string>
+    <string name="auth_hide_password">Hide password</string>
+    <string name="auth_sign_in">Login</string>
+    <string name="auth_register">Registration</string>
+    <string name="auth_submit_register">Register</string>
+    <string name="auth_register_title">Create an account</string>
+    <string name="auth_back_to_login">Already have an account</string>
+    <string name="auth_forgot_password">Forgot your password?</string>
+    <string name="auth_forgot_toast">Password recovery will be available soon</string>
+    <string name="auth_reset_title">Password reset</string>
+    <string name="auth_reset_identifier_hint">Enter your login or email. We will send a 6-digit code to your account email.</string>
+    <string name="auth_reset_send_code">Send code</string>
+    <string name="auth_reset_code_sent_generic">If the account is found, the code is sent by email</string>
+    <string name="auth_reset_password_title">New Password</string>
+    <string name="auth_reset_password_subtitle">For %1$s</string>
+    <string name="auth_reset_new_password">New Password</string>
+    <string name="auth_reset_confirm_password">Repeat password</string>
+    <string name="auth_reset_save_and_login">Save and login</string>
+    <string name="auth_reset_back_to_code">Return to code</string>
+    <string name="auth_error_password_mismatch">Passwords don\'t match</string>
+    <string name="auth_error_reset_not_found">Request code again</string>
+    <string name="auth_terms_line1">By logging in you accept</string>
+    <string name="auth_terms_link">user agreement</string>
+    <string name="auth_privacy_link">privacy policy</string>
+    <string name="auth_error_network">Failed to contact the server. Check the internet and that the API port is open (often 8080 or HTTPS on 443).</string>
+    <string name="auth_error_ssl">HTTPS (certificate) error. For your server, use http://...:8080 or fix SSL.</string>
+    <string name="auth_error_credentials">Invalid login or password</string>
+    <string name="auth_error_email_taken">This email is already registered</string>
+    <string name="auth_error_login_taken">This login is already taken</string>
+    <string name="auth_error_invalid_login">Login: 3–32 characters, Latin, numbers and _</string>
+    <string name="auth_error_weak_password">Password is too short (minimum 8 characters)</string>
+    <string name="auth_error_generic">Something went wrong. Try again.</string>
+    <string name="auth_error_invalid_code">Invalid code</string>
+    <string name="auth_error_code_expired">The code has expired. Request a new one.</string>
+    <string name="auth_error_rate_limited">Please wait a minute before resending</string>
+    <string name="auth_code_sent">Code sent by email</string>
+    <string name="auth_verify_title">Confirmation</string>
+    <string name="auth_verify_subtitle">Enter the 6-digit code we sent to %1$s</string>
+    <string name="auth_verify_confirm">Confirm</string>
+    <string name="auth_verify_resend">Send code again</string>
+    <string name="auth_verify_back">Change login, email or password</string>
+    <string name="auth_continue_register">Continue</string>
+
+
+    <string name="post_register_message">Welcome!</string>
+
+
+    <string name="onboarding_hero_headline">Your data belongs to you.</string>
+    <string name="onboarding_rich_part1">Lazure stores your notes on your device so you can work on them quickly and privately</string>
+    <string name="onboarding_rich_offline">\u0020even without a network</string>
+    <string name="onboarding_rich_part2">. Your data is stored in a secure local folder called</string>
+    <string name="onboarding_rich_vault">\u0020storage</string>
+    <string name="onboarding_rich_suffix">.</string>
+    <string name="onboarding_choose_folder">Select storage folder</string>
+    <string name="onboarding_create_vault">Create a new repository</string>
+    <string name="onboarding_use_existing">Use existing</string>
+
+
+    <string name="create_vault_headline">Choose a name for your repository</string>
+    <string name="create_vault_name_label">Storage name</string>
+    <string name="create_vault_location_section">Storage location</string>
+    <string name="create_vault_storage_device_title">Device storage</string>
+    <string name="create_vault_storage_device_hint">• Allows other applications to access Lazure data.</string>
+    <string name="create_vault_storage_app_title">Application storage</string>
+    <string name="create_vault_storage_app_hint">• The Lazure uninstall process will also delete all your data.</string>
+    <string name="create_vault_submit">Create a repository</string>
+    <string name="create_vault_error_exists">There is already a storage with the same name. Choose a different name.</string>
+
+
+    <string name="home_ask_lazure_hint">Check with Lazure...</string>
+    <string name="empty_usage_label">Activity</string>
+    <string name="empty_usage_period">30 days</string>
+    <string name="empty_chat_continue_label">Continue</string>
+    <string name="empty_chat_last_note_label">Latest note</string>
+    <string-array name="home_empty_chat_quick_prompts">
+        <item>Summarize my notes</item>
+        <item>Plan my day</item>
+        <item>What did I write recently?</item>
+        <item>Find links between notes</item>
+        <item>Help me shape an idea</item>
+        <item>What matters in my vault?</item>
+    </string-array>
+    <string-array name="home_empty_chat_prompts_morning">
+        <item>Good morning. What are we going to talk about?</item>
+        <item>Where do we start this morning?</item>
+        <item>Morning is a good time for ideas</item>
+        <item>What do you have in mind for today?</item>
+    </string-array>
+    <string-array name="home_empty_chat_prompts_day">
+        <item>What are we going to do today?</item>
+        <item>What\'s on the agenda?</item>
+        <item>How is your day going?</item>
+        <item>How can I help you during the day?</item>
+    </string-array>
+    <string-array name="home_empty_chat_prompts_evening">
+        <item>Good evening. What shall we discuss?</item>
+        <item>How was your day?</item>
+        <item>Evening is time to take stock</item>
+        <item>What will we talk about this evening?</item>
+    </string-array>
+    <string-array name="home_empty_chat_prompts_night">
+        <item>Quiet night - what should we think about?</item>
+        <item>What\'s on your mind this night?</item>
+    </string-array>
+    <string name="cd_attach">Attachment</string>
+    <string name="cd_attach_note">Attach a note</string>
+    <string name="cd_voice_input">Voice input</string>
+    <string name="cd_close">Close</string>
+    <string name="chat_add_to_chat">Add to chat</string>
+    <string name="chat_add_camera">Camera</string>
+    <string name="chat_add_photos">Photo</string>
+    <string name="chat_add_files">Files</string>
+    <string name="chat_pick_note">Attach a note</string>
+    <string name="chat_pick_model">Model</string>
+    <string name="chat_pick_model_device_hint">Device memory: %1$d MB · we recommend the best option</string>
+    <string name="chat_models_cloud">Cloud</string>
+    <string name="chat_models_local">Local</string>
+    <string name="chat_model_recommended">Recommended</string>
+    <string name="chat_model_download">Download</string>
+    <string name="chat_model_download_progress">%1$s of %2$s</string>
+    <string name="chat_model_downloading">Loading model…</string>
+    <string name="chat_model_download_done">Model loaded</string>
+    <string name="chat_model_download_failed">Failed to load: %1$s</string>
+    <string name="chat_model_download_wifi">Requires Wi-Fi to download</string>
+    <string name="chat_model_download_storage">Not enough space on your device</string>
+    <string name="chat_model_download_paused">Download paused</string>
+    <string name="chat_model_download_pause">Pause</string>
+    <string name="chat_model_download_resume">Resume</string>
+    <string name="chat_model_download_cancel">Cancel</string>
+    <string name="chat_model_download_channel">Model downloads</string>
+    <string name="chat_model_download_channel_desc">Background download of local models</string>
+    <string name="chat_model_download_notification">Downloading %1$s</string>
+    <string name="chat_model_download_paused_notification">%1$s — paused</string>
+    <string name="chat_model_delete">Delete</string>
+    <string name="chat_model_delete_confirm_title">Delete model?</string>
+    <string name="chat_model_delete_confirm_body">The file %1$s will be deleted from the device.</string>
+    <string name="chat_model_delete_done">Model removed</string>
+    <string name="chat_model_incomplete_removed">Incomplete download removed: %1$s</string>
+    <string name="chat_pick_note_empty">No notes - create in the menu on the left</string>
+    <string name="cd_open_menu">Open storage menu</string>
+    <string name="cd_open_models">Selecting a local model</string>
+    <string name="home_drawer_new_note">New note</string>
+    <string name="home_drawer_no_files">No files</string>
+    <string name="home_drawer_account_guest">Not authorized</string>
+    <string name="home_drawer_account_default">My account</string>
+    <string name="home_drawer_plan_free">Free plan</string>
+    <string name="home_drawer_plan_pro">Pro plan</string>
+    <string name="cd_open_settings">Settings</string>
+    <string name="home_model_label">Model</string>
+    <string name="home_local_model_section">Local model</string>
+    <string name="home_local_model_url_hint">Model link (.litertlm)</string>
+    <string name="home_gguf_section">@string/home_local_model_section</string>
+    <string name="home_gguf_url_hint">@string/home_local_model_url_hint</string>
+    <string name="home_gguf_download">Download</string>
+    <string name="home_gguf_url_empty">Insert a link to the model</string>
+    <string name="home_gguf_download_ok">Model saved and selected</string>
+    <string name="home_gguf_download_fail">Failed to download</string>
+    <string name="home_gguf_none">Not selected</string>
+    <string name="home_gguf_no_files">The list is empty - select a preset above or paste a link</string>
+    <string name="home_gguf_selected">Model selected</string>
+    <string name="home_gguf_integrity_fail">Integrity check failed: %1$s</string>
+
+
+    <string name="notes_title">Notes</string>
+    <string name="notes_reindex">Reindexing</string>
+    <string name="notes_chat">Chat</string>
+    <string name="notes_settings">Settings</string>
+
+
+    <string name="editor_placeholder">Markdown</string>
+    <string name="editor_default_title">Note</string>
+    <string name="editor_preview">View</string>
+    <string name="editor_edit">Edit</string>
+    <string name="editor_save_failed">Failed to save note (no file access or storage failure)</string>
+    <string name="editor_toast_open_system_folder_picker">There is no permanent access to the vault folder. In the system dialog, select the same folder where the notes are located - Android will again give permission.</string>
+    <string name="editor_toast_grant_folder_on_save">You need access to the folder. Select the same vault folder - saving will be repeated automatically.</string>
+    <string name="editor_toast_vault_access_saved">Folder access updated</string>
+    <string name="editor_toast_still_no_access">Access has not been restored. Select the exact folder where this note is located.</string>
+    <string name="cd_back">Back</string>
+
+
+    <string name="chat_title">Chat</string>
+    <string name="chat_mode_local">Locally</string>
+    <string name="chat_mode_cloud">Cloud</string>
+    <string name="chat_hint_cloud">In cloud mode, the selected storage context is sent to your server and AI provider.</string>
+    <string name="chat_hint_cloud_openai">OpenAI-compatible endpoint (Timeweb Agent, etc.): specify the base URL with /v1 and the API key in the settings. Do not store secrets in the repository code.</string>
+    <string name="chat_hint_cloud_gemini">Google Gemini: AI Studio key in settings. Requests go to generativelanguage.googleapis.com.</string>
+    <string name="chat_hint_local">Local mode: on-device answers via LiteRT-LM (Google). Download a model from the list at the top right.</string>
+    <string name="chat_message_placeholder">Message</string>
+    <string name="chat_send">Send</string>
+    <string name="chat_copy">Copy</string>
+    <string name="chat_history_title">Chats</string>
+    <string name="chat_history_new">New</string>
+    <string name="chat_history_empty">History is empty - start a new chat.</string>
+    <string name="chat_history_save_note">Save chat as note</string>
+    <string name="chat_history_delete">Delete chat</string>
+    <string name="time_just_now">just now</string>
+    <string name="time_minutes_ago">%1$d min ago</string>
+    <string name="time_hours_ago">%1$d hours ago</string>
+    <string name="time_days_ago">%1$d days ago</string>
+    <string name="chat_share">Share</string>
+    <string name="cd_share">Share</string>
+    <string name="cd_copy">Copy answer</string>
+    <string name="chat_copied">Copied</string>
+    <string name="code_copied">Code copied</string>
+    <string name="cd_copy_code">Copy code</string>
+    <string name="chat_error_setup">Specify the API address and enter the settings.</string>
+    <string name="chat_error_setup_openai">Specify the base URL and API key of the OpenAI-compatible provider in the settings.</string>
+    <string name="chat_error_setup_gemini">Specify the Gemini (AI Studio) key in the settings.</string>
+    <string name="chat_error_cloud">Cloud error: %1$s</string>
+    <string name="chat_error_quota_exhausted">You have exceeded your cloud AI model token usage limit. Install a local model in the model selection menu - it can be used without token restrictions.</string>
+    <string name="chat_error_cloud_ai_disabled">Cloud AI is temporarily unavailable on the server. Install a local model or try again later.</string>
+    <string name="chat_error_generic">Could not get a response. Check your network and settings.</string>
+    <string name="chat_error_offline_cloud">No network connection. Cloud mode is unavailable — switch to a local model.</string>
+    <string name="chat_offline_cloud_hint">Offline — local mode only</string>
+    <string name="chat_error_server">The Lazure AI server is temporarily unavailable. Please try again later or install a local model.</string>
+    <string name="chat_error_ai_provider">The cloud model did not respond. Retry the request or install local AI without restrictions.</string>
+    <string name="chat_role_user">User</string>
+    <string name="chat_role_assistant">Assistant</string>
+
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_api_url">API address</string>
+    <string name="settings_save_api">Save address</string>
+    <string name="settings_toast_api_saved">Address saved</string>
+    <string name="settings_email">E-mail</string>
+    <string name="settings_password">Password</string>
+    <string name="settings_login">Login</string>
+    <string name="settings_toast_login_ok">Login done</string>
+    <string name="settings_toast_login_fail">Failed to login</string>
+    <string name="settings_cloud_none">Cloud: not authorized</string>
+    <string name="settings_cloud_ok">Cloud: token saved on device</string>
+    <string name="settings_passphrase">Snapshot phrase (E2EE)</string>
+    <string name="settings_save_passphrase">Save phrase</string>
+    <string name="settings_toast_passphrase_saved">Phrase saved locally</string>
+    <string name="settings_upload_snapshot">Upload encrypted snapshot</string>
+    <string name="settings_restore_snapshot">Restore last snapshot</string>
+    <string name="settings_toast_pick_vault">First select a storage</string>
+    <string name="settings_toast_login_first">Login first</string>
+    <string name="settings_toast_passphrase_required">Encryption phrase required</string>
+    <string name="settings_toast_upload_ok">Photo uploaded</string>
+    <string name="settings_toast_upload_fail">Loading error: %1$s</string>
+    <string name="settings_toast_restore_ok">Restore completed</string>
+    <string name="settings_toast_restore_fail">Restore error: %1$s</string>
+    <string name="settings_restore_hint">Overwrites matching files in the storage root</string>
+    <string name="settings_section_vault">Storage</string>
+    <string name="settings_vault_current_label">Current storage</string>
+    <string name="settings_vault_not_set">Not selected</string>
+    <string name="settings_change_vault">Change storage</string>
+    <string name="settings_change_vault_title">Notes storage</string>
+    <string name="settings_change_vault_hint">Select an existing storage location on your device or create a new one. Notes remain in the application folder.</string>
+    <string name="settings_create_new_vault">Create a new repository</string>
+    <string name="settings_existing_vaults">On this device</string>
+    <string name="settings_no_vaults_yet">There are no repositories yet - create the first one.</string>
+    <string name="settings_vault_current">Currently in use</string>
+    <string name="settings_toast_vault_changed">Storage switched</string>
+    <string name="settings_section_quota">Cloud AI</string>
+    <string name="settings_quota_title">Token quota</string>
+    <string name="settings_quota_loading">Loading quota...</string>
+    <string name="settings_quota_error">Failed to load limit from server</string>
+    <string name="settings_quota_error_401">The session has expired. Sign out and sign in again.</string>
+    <string name="settings_quota_error_404">The server is out of date (no /api/me/account). Update the API on VDS.</string>
+    <string name="settings_quota_error_http">Server error (HTTP %1$d)</string>
+    <string name="settings_quota_error_network">No connection to the server. Check the internet and that the API is accessible via HTTP.</string>
+    <string name="settings_quota_dev_stub">Local login (debug): quota from server not available</string>
+    <string name="settings_quota_cached_hint">Saved data is shown. Click "Retry" to update.</string>
+    <string name="settings_quota_refresh_failed">Failed to update quota. Check the Internet.</string>
+    <string name="settings_quota_retry">Repeat</string>
+    <string name="settings_quota_unlimited">No limit</string>
+    <string name="settings_quota_daily_reset">Token usage resets every day at 0:00 Moscow time.</string>
+    <string name="settings_plan_compare_title">Plan comparison</string>
+    <string name="settings_plan_free_title">Free</string>
+    <string name="settings_plan_pro_title">Pro</string>
+    <string name="settings_plan_pro_price">%1$d ₽/mo</string>
+    <string name="settings_plan_local_unlimited">Local AI models with no limits</string>
+    <string name="settings_plan_cloud_daily">Cloud AI — %1$s per day</string>
+    <string name="settings_plan_quota_amount">%1$s tokens</string>
+    <string name="settings_subscription_payments_button">Payment history</string>
+    <string name="settings_subscription_until">Pro until %1$s</string>
+    <string name="settings_subscription_forever">Pro forever</string>
+    <string name="settings_subscription_active_forever_hint">Pro subscription with no expiry date.</string>
+    <string name="settings_subscription_active_hint">Subscription active. Renewal adds days to your current period.</string>
+    <string name="settings_subscription_payments_title">Payment history</string>
+    <string name="settings_subscription_payments_empty">No payments yet</string>
+    <string name="settings_payment_status_confirmed">Paid</string>
+    <string name="settings_payment_status_pending">Pending</string>
+    <string name="settings_payment_status_canceled">Canceled</string>
+    <string name="settings_payment_status_failed">Failed</string>
+    <string name="settings_payment_row">%1$s · %2$d ₽ · %3$s</string>
+    <string name="settings_subscription_offer">Lazure Pro — %1$d ₽ per month.</string>
+    <string name="settings_subscription_buy_button">Get Pro — %1$d ₽/mo</string>
+    <string name="settings_subscription_renew_button">Renew Pro — %1$d ₽/mo</string>
+    <string name="settings_subscription_sign_in">Sign in to subscribe.</string>
+    <string name="settings_subscription_payment_opened">Payment page opened. After paying, return and tap Retry.</string>
+    <string name="settings_subscription_billing_unavailable">Billing is not configured on the server. Add Platega keys to API .env.</string>
+    <string name="settings_subscription_checkout_error">Could not create invoice. Try again later.</string>
+    <string name="settings_section_account">Account</string>
+    <string name="settings_sessions_title">Where you\'re signed in</string>
+    <string name="settings_sessions_subtitle">Active sessions on your devices. End any you don\'t recognize.</string>
+    <string name="settings_sessions_current">This device</string>
+    <string name="settings_sessions_last_seen">Last active: %1$s</string>
+    <string name="settings_sessions_revoke">Sign out</string>
+    <string name="settings_sessions_revoke_failed">Could not end session</string>
+    <string name="settings_sessions_empty">No active sessions yet. Sign in again to see this device.</string>
+    <string name="settings_sessions_load_failed">Could not load sessions</string>
+    <string name="settings_sessions_unknown_device">Unknown device</string>
+    <string name="settings_account_signed_out">Not authorized</string>
+    <string name="settings_logout">Log out of your account</string>
+    <string name="settings_toast_logout">You\'re out</string>
+    <string name="settings_cloud_llm_section">Cloud Chat (not Lazure API)</string>
+    <string name="settings_cloud_provider_lazure">Lazure Server</string>
+    <string name="settings_cloud_provider_openai">OpenAI-compatible</string>
+    <string name="settings_cloud_provider_gemini">Google Gemini</string>
+    <string name="settings_openai_base">Base URL (…/v1)</string>
+    <string name="settings_openai_base_hint">Timeweb Agent: URL before /v1, for example .../agents/ID/v1. Can be set in local.properties as OPENAI_COMPAT_BASE_URL</string>
+    <string name="settings_openai_key">API key (Bearer)</string>
+    <string name="settings_openai_key_hint">JWT Timeweb: paste here or in local.properties: OPENAI_COMPAT_API_KEY=…</string>
+    <string name="settings_openai_model">Model name</string>
+    <string name="settings_gemini_key">Gemini Key (AI Studio)</string>
+    <string name="settings_gemini_key_hint">Google Gemini requires a key from AI Studio. Optional: in the project root in local.properties add GEMINI_API_KEY=... (the file is not committed). The JWT string from other providers is not suitable here - for them use OpenAI-compatible mode.</string>
+    <string name="settings_gemini_model">Model Gemini</string>
+    <string name="settings_save_cloud_llm">Save Cloud AI</string>
+    <string name="settings_toast_cloud_llm_saved">Cloud AI settings saved</string>
+    <string name="settings_local_llm_section">Local model (LiteRT-LM)</string>
+    <string name="settings_llm_temperature">Temperature</string>
+    <string name="settings_llm_top_p">Top P</string>
+    <string name="settings_llm_max_tokens">Max tokens</string>
+    <string name="settings_llm_context">Context size</string>
+    <string name="settings_llm_threads">CPU threads</string>
+    <string name="settings_llm_compute_backend">Model acceleration</string>
+    <string name="settings_llm_compute_gpu">GPU (OpenCL)</string>
+    <string name="settings_llm_compute_cpu">CPU</string>
+    <string name="settings_llm_compute_cpu_only_build">CPU</string>
+    <string name="settings_llm_compute_cpu_only_build_hint">GPU is built into LiteRT-LM. If acceleration is unavailable, the app falls back to CPU automatically.</string>
+    <string name="settings_llm_compute_gpu_available">GPU is available on this device</string>
+    <string name="settings_llm_compute_gpu_unavailable">GPU unavailable — using CPU</string>
+    <string name="settings_llm_compute_gpu_device">GPU: %1$s</string>
+    <string name="settings_local_web_research">Web search for local model</string>
+    <string name="settings_local_web_research_hint">Fetches web context before answering (weather, search). Model still runs on device. Enabled by default.</string>
+    <string name="settings_local_web_research_endpoint">Search URL</string>
+    <string name="settings_local_web_research_endpoint_default">DuckDuckGo (default)</string>
+    <string name="settings_local_web_research_endpoint_hint">URL must contain {query}. Works with DuckDuckGo, SearXNG, and other JSON APIs.</string>
+    <string name="settings_local_web_research_endpoint_dialog_hint">Example: https://search.example.com/search?q={query}&amp;format=json</string>
+    <string name="settings_save_llm_params">Save model parameters</string>
+    <string name="settings_toast_llm_params_saved">Settings saved</string>
+    <string name="settings_toast_llm_params_invalid">Check the numbers (temperature, top P, ...)</string>
+
+    <string name="settings_privacy_section">Privacy &amp; support</string>
+    <string name="settings_privacy_policy_link">Privacy policy</string>
+    <string name="settings_terms_link">Terms of service</string>
+    <string name="settings_support_title">Contact</string>
+    <string name="settings_local_model_cellular">Download models over mobile network</string>
+    <string name="settings_local_model_cellular_hint">Allow downloading local models over mobile data</string>
+    <string name="settings_gguf_cellular">@string/settings_local_model_cellular</string>
+    <string name="settings_gguf_cellular_hint">@string/settings_local_model_cellular_hint</string>
+
+    <string name="settings_section_reading">Reading</string>
+    <string name="settings_section_chat">Chat and AI</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_preview_label">Preview</string>
+    <string name="settings_font_label">Font</string>
+    <string name="settings_font_size">Font size</string>
+    <string name="settings_font_weight">Typeface</string>
+    <string name="settings_stream_replies">Streaming response</string>
+    <string name="settings_stream_replies_hint">Text appears as the model is generated</string>
+    <string name="settings_chat_haptics">Haptic feedback</string>
+    <string name="settings_chat_haptics_hint">Vibration when sending a message and when the reply finishes</string>
+    <string name="settings_typewriter">Print effect</string>
+    <string name="settings_typewriter_hint">Soft animation for responses received in full</string>
+    <string name="settings_semantic_search">Search by meaning</string>
+    <string name="settings_semantic_search_hint">Search relevant notes in vault for chat context</string>
+    <string name="settings_auto_title_chats">Auto-title of chats</string>
+    <string name="settings_auto_title_chats_hint">AI suggests a title for the first message</string>
+    <string name="settings_compress_images">Compress photo</string>
+    <string name="settings_compress_images_hint">Smaller attachment size in chat</string>
+    <string name="settings_theme">Subject</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_dynamic_color">Material You</string>
+    <string name="settings_dynamic_color_hint">Wallpaper colors (Android 12+)</string>
+
+    <string name="editor_backlinks_title">Links to this post</string>
+    <string name="editor_backlinks_empty">Nobody refers</string>
+    <string name="editor_delete">Delete note</string>
+    <string name="editor_delete_confirm_title">Delete a note?</string>
+    <string name="editor_delete_confirm_body">The file "%1$s" will be permanently deleted.</string>
+    <string name="editor_delete_confirm">Delete</string>
+    <string name="editor_delete_cancel">Cancel</string>
+    <string name="editor_delete_failed">Failed to delete note</string>
+
+
+    <string name="settings_language">Language</string>
+    <string name="settings_language_hint">Application interface language</string>
+    <string name="lang_system">As in the system</string>
+    <string name="lang_english">English</string>
+    <string name="lang_russian">Russian</string>
+    <string name="thinking_label">Think…</string>
+    <string name="drawer_settings">Settings</string>
+    <string name="toast_attach_failed">Failed to attach: %1$s</string>
+    <string name="toast_speech_unavailable">Voice input is not available on this device</string>
+    <string name="toast_note_updated">Note updated</string>
+    <string name="toast_note_save_failed">Failed to save note</string>
+    <string name="toast_note_appended">Changes added to note</string>
+    <string name="action_open_created_note">Open created note</string>
+    <string name="chat_sources_label">Sources</string>
+    <string name="chat_note_created_chip">Note created</string>
+    <string name="chat_note_created_chip_named">Note created · %1$s</string>
+    <string name="toast_renamed">Renamed</string>
+    <string name="toast_deleted">Deleted</string>
+    <string name="toast_delete_failed">Failed to delete</string>
+    <string name="action_delete">Delete</string>
+    <string name="note_sources_title">Sources of notes</string>
+    <string name="suggestion_create_note">Create a note: %1$s</string>
+    <string name="suggestion_create_note_action">Create a note</string>
+    <string name="suggestion_edit_for">Edit for %1$s</string>
+    <string name="action_replace">Replace</string>
+    <string name="action_append">Add</string>
+    <string name="action_open">Open</string>
+    <string name="toast_rename_save_failed">Failed to save rename: %1$s</string>
+    <string name="sheet_note_chat_hint">Ask about this note...</string>
+    <string name="sheet_loading">Loading…</string>
+    <string name="sheet_input_hint">Message</string>
+    <string name="sheet_api_key_missing">Specify the API key in settings</string>
+    <string name="sheet_error_generic">Something went wrong</string>
+    <string name="sheet_empty_response">Empty model response</string>
+    <string name="sheet_apply_edits_user">Apply edits (user)</string>
+    <string name="toast_camera_unavailable">Camera not available</string>
+    <string name="graph_title">Notes graph</string>
+    <string name="graph_search_hint">Searching for a node...</string>
+    <string name="graph_building">The graph is being built...</string>
+    <string name="graph_neighbors">Connections: %1$d</string>
+    <string name="graph_empty_toast">Not enough data for graph</string>
+    <string name="graph_share_title">Share graph</string>
+    <string name="llm_pick_model_hint">Choose a cloud or on-premises model</string>
+    <string name="llm_model_not_found">Model not found: %1$s</string>
+    <string name="llm_native_unavailable_prefix">Native engine not available:</string>
+    <string name="llm_no_vault_notes">No notes in storage: %1$s</string>
+    <string name="llm_no_matches">No matches: %1$s</string>
+    <string name="llm_local_summary_header">Local model in brief</string>
+    <string name="note_created_toast">Note "%1$s" created</string>
+    <string name="toast_rename_failed">Failed to rename</string>
+    <string name="toast_create_note_failed">Failed to create note</string>
+    <string name="llm_choose_model_hint">Select a model: button with a storage icon at the top right in the chat.</string>
+    <string name="llm_stub_no_vault">The local model is not yet connected and there are no notes for "%1$s" in the store. Create notes or select a cloud model in the top right.</string>
+    <string name="llm_stub_empty_search">There was nothing found in the repository for the query "%1$s".</string>
+    <string name="llm_stub_no_match">There were no matches for the query "%1$s" in the storage.\n\nPlease provide more details or try the cloud model (storage icon in the top right).</string>
+    <string name="llm_stub_from_notes">Based on your notes:</string>
+    <string name="llm_stub_note_fallback">Note %1$d</string>
+    <string name="llm_stub_footer">(Local search without LLM. For a detailed answer, connect the cloud model at the top right.)</string>
+    <string name="sheet_note_chat_examples">Ask about this note. For example: rewrite shorter, add a section, or fix what is wrong.</string>
+    <string name="sheet_error_with_message">Error: %1$s</string>
+    <string name="settings_preview_sample">Lazure helps you think more clearly. Good typography makes long notes easier to read—choose a font and size that you\'re comfortable with.</string>
+    <string name="llm_native_search_fallback">LiteRT-LM is unavailable — using local note search. Download a model from the list for full offline answers.\n\n</string>
+    <string name="llm_model_not_found_detail">Model \'%1$s\' not found. Download it from the list on the right or update your selection.</string>
+
+    <string name="default_api_base"></string>
+    <string name="privacy_policy_url"></string>
+    <string name="terms_url"></string>
+    <string name="support_email"></string>
+
+    <string name="local_gen_loading">loading…</string>
+    <string name="local_gen_weights_loading">weight...</string>
+    <string name="local_gen_prefill">prompt...</string>
+
+    <string name="note_untitled">Untitled</string>
+    <string name="chat_title_new">New chat</string>
+    <string name="chat_title_default">Chat</string>
+    <string name="cd_remove_note">Remove note</string>
+    <string name="cd_new_chat">New chat</string>
+    <string name="chat_model_cloud_subtitle">Cloud assistant</string>
+    <string name="chat_model_cloud_subtitle_long">Cloud assistant (Lazure server)</string>
+    <string name="chat_model_local_subtitle">On-device · %1$s</string>
+    <string name="chat_model_local_gguf_subtitle">@string/chat_model_local_subtitle</string>
+    <string name="vault_error_unavailable">Storage unavailable — reopen the folder in settings</string>
+    <string name="vault_error_no_write">No write access to storage — reopen the folder</string>
+    <string name="drawer_rename_note_title">Rename note</string>
+    <string name="drawer_rename_field_label">File name</string>
+    <string name="menu_rename">Rename</string>
+    <string name="action_save">Save</string>
+    <string name="toast_save_failed">Could not save</string>
+    <string name="toast_chat_saved_as_note">Chat saved as note</string>
+    <string name="speech_recognition_prompt">Speak…</string>
+    <string name="chat_empty_model_response">Empty model response (safety filters or network error).</string>
+    <string name="chat_model_delete_file_failed">could not delete file</string>
+
+<string name="graph_stats_subtitle">%1$d nodes · %2$d links · %3$d clusters</string>
+    <string name="graph_no_wiki_notes">No notes with [[…]] links</string>
+    <string name="cd_clear">Clear</string>
+    <string name="cd_rebuild">Rebuild</string>
+    <string name="cd_send">Send</string>
+    <string name="cd_hide">Hide</string>
+    <string name="editor_format_bold">Bold</string>
+    <string name="editor_format_italic">Italic</string>
+    <string name="editor_format_heading">Heading</string>
+    <string name="editor_format_code">Code</string>
+    <string name="editor_format_list">List</string>
+    <string name="editor_format_task">Checklist</string>
+    <string name="sheet_action_apply">Apply</string>
+    <string name="note_sources_short">Sources</string>
+    <string name="suggestion_changes_for">Changes for “%1$s”</string>
+    <string name="action_append_to_end">Append</string>
+    <string name="editor_toast_saved_rename_failed">Text saved, but rename failed: %1$s</string>
+    <string name="sheet_files_question">What is in these files?</string>
+    <string name="cd_search">Search</string>
+    <string name="graph_focus">Focus</string>
+    <string name="graph_reset_focus">Reset</string>
+    <string name="graph_is_empty">Graph is empty</string>
+    <string name="chat_error_no_response">no response</string>
+    <string name="sheet_api_key_note_chat">API key is not configured (Settings → Chat &amp; AI).</string>
+    <string-array name="thinking_phrases">
+        <item>I\'m leafing through the notes...</item>
+        <item>I\'m gathering context...</item>
+        <item>Connecting ideas...</item>
+        <item>I\'m looking in vault...</item>
+        <item>Reading between the lines...</item>
+        <item>I\'m choosing words...</item>
+        <item>I\'m checking the facts...</item>
+        <item>I\'m building an answer...</item>
+        <item>Cooking…</item>
+        <item>One more moment...</item>
+    </string-array>
+</resources>
+
+

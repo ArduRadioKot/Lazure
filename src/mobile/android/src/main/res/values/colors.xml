@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="lazure_cyan">#16C1D8</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="lazure_window_bg">#FF262626</color>
+    <color name="lazure_window_bg_light">#FFF9FAFB</color>
+</resources>

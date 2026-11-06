@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Lazure" type="AndroidRunConfigurationType" factoryName="Android App">
+    <module name="Lazure.app" />
+    <option name="DEPLOY" value="true" />
+    <option name="Make" enabled="true" />
+    <method v="2">
+      <option name="Android.Gradle.BeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>

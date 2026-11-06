@@ -1,0 +1,191 @@
+import java.net.URL
+import java.util.Properties
+
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+}
+
+android {
+    namespace = "com.rassvet.essential"
+    compileSdk {
+        version = release(36) {
+            minorApiLevel = 1
+        }
+    }
+
+    defaultConfig {
+        applicationId = "ru.myessentiality.essential"
+        minSdk = 24
+        targetSdk = 36
+        versionCode = 11
+        versionName = "1.4.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
+        externalNativeBuild {
+            cmake {
+                cppFlags += "-std=c++17"
+                arguments += "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+            }
+        }
+
+
+        buildConfigField("String", "GEMINI_API_KEY_LOCAL", "\"\"")
+        buildConfigField("String", "OPENAI_COMPAT_API_KEY_LOCAL", "\"\"")
+        buildConfigField("String", "OPENAI_COMPAT_BASE_URL_LOCAL", "\"\"")
+        buildConfigField("boolean", "ALLOW_DIRECT_CLOUD", "false")
+    }
+
+    ndkVersion = "27.1.12297006"
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+
+    buildTypes {
+        debug {
+            isMinifyEnabled = false
+            val localProps = Properties()
+            val localFile = rootProject.file("local.properties")
+            if (localFile.exists()) {
+                localFile.inputStream().use { localProps.load(it) }
+            }
+            fun esc(v: String) = v.replace("\\", "\\\\").replace("\"", "\\\"")
+            buildConfigField(
+                "String",
+                "GEMINI_API_KEY_LOCAL",
+                "\"${esc(localProps.getProperty("GEMINI_API_KEY") ?: "")}\"",
+            )
+            buildConfigField(
+                "String",
+                "OPENAI_COMPAT_API_KEY_LOCAL",
+                "\"${esc(localProps.getProperty("OPENAI_COMPAT_API_KEY") ?: "")}\"",
+            )
+            buildConfigField(
+                "String",
+                "OPENAI_COMPAT_BASE_URL_LOCAL",
+                "\"${esc(localProps.getProperty("OPENAI_COMPAT_BASE_URL") ?: "")}\"",
+            )
+            buildConfigField("boolean", "ALLOW_DIRECT_CLOUD", "true")
+        }
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = true
+    }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+}
+
+val downloadLiteRtGpuSamplers by tasks.registering {
+    val samplerVersion = libs.versions.litertlm.get()
+    val jniRoot = layout.projectDirectory.dir("src/main/jniLibs")
+    val targets =
+        mapOf(
+            "arm64-v8a" to
+                "https://media.githubusercontent.com/media/google-ai-edge/LiteRT-LM/v$samplerVersion/" +
+                    "prebuilt/android_arm64/libLiteRtTopKOpenClSampler.so",
+            "x86_64" to
+                "https://media.githubusercontent.com/media/google-ai-edge/LiteRT-LM/v$samplerVersion/" +
+                    "prebuilt/android_x86_64/libLiteRtTopKOpenClSampler.so",
+        )
+    inputs.property("samplerVersion", samplerVersion)
+    outputs.dirs(jniRoot)
+    onlyIf {
+        targets.any { (abi, _) ->
+            !jniRoot.file("$abi/libLiteRtTopKOpenClSampler.so").asFile.exists()
+        }
+    }
+    doLast {
+        targets.forEach { (abi, url) ->
+            val outFile = jniRoot.file("$abi/libLiteRtTopKOpenClSampler.so").asFile
+            if (outFile.exists()) return@forEach
+            outFile.parentFile.mkdirs()
+            URL(url).openStream().use { input ->
+                outFile.outputStream().use { output -> input.copyTo(output) }
+            }
+            logger.lifecycle("Downloaded LiteRT GPU sampler: ${outFile.name} ($abi)")
+        }
+    }
+}
+
+tasks.named("preBuild") {
+    dependsOn(downloadLiteRtGpuSamplers)
+}
+
+configurations.configureEach {
+    resolutionStrategy {
+
+        force("androidx.compose.material3:material3:1.5.0-alpha16")
+        force("androidx.compose.material3:material3-android:1.5.0-alpha16")
+    }
+}
+
+dependencies {
+    implementation(libs.androidx.core.ktx)
+    implementation("androidx.appcompat:appcompat:1.7.1")
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation("androidx.compose.animation:animation")
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.material3)
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation(libs.androidx.documentfile)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.litertlm.android)
+    implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
+    ksp(libs.hilt.compiler)
+    implementation("ru.noties:jlatexmath-android:0.2.0")
+    testImplementation(libs.junit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    testImplementation("androidx.room:room-testing:2.7.0")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation("androidx.room:room-testing:2.7.0")
+    androidTestImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+
