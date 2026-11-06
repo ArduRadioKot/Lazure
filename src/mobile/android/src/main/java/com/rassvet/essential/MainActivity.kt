@@ -57,14 +57,16 @@ class MainActivity : AppCompatActivity() {
             EssentialTheme(darkTheme = darkTheme, dynamicColor = dynamicColor) {
                 EssentialSystemBars(darkTheme = darkTheme)
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    EssentialApp(
-                        db = appDatabase,
-                        prefs = prefs,
-                        indexRepository = indexRepository,
-                        chatEngine = chatEngine,
-                        localEngine = localEngine,
-                        networkMonitor = networkMonitor,
-                    )
+                    com.rassvet.essential.ui.security.PinGuard {
+                        EssentialApp(
+                            db = appDatabase,
+                            prefs = prefs,
+                            indexRepository = indexRepository,
+                            chatEngine = chatEngine,
+                            localEngine = localEngine,
+                            networkMonitor = networkMonitor,
+                        )
+                    }
                 }
             }
         }

@@ -1988,7 +1988,6 @@ fun MainHomeScreen(
             if (messages.isEmpty()) {
                 EmptyChatPlaceholder(
                     prompt = emptyChatPrompt,
-                    logoStroke = chrome.logoStroke,
                     promptColor = chrome.hint,
                     reader = readerTypography,
                     quickPrompts = emptyQuickPrompts,

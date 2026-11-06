@@ -13,11 +13,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +59,7 @@ fun AIModelsScreen(prefs: VaultPreferencesRepository, onBack: () -> Unit) {
     val allowCellular by prefs.ggufAllowCellular.collectAsState(initial = false)
     var installed by remember { mutableStateOf<List<String>>(emptyList()) }
     var pendingDownload by remember { mutableStateOf<ChatModelSelection.Option?>(null) }
+    var deleteTarget by remember { mutableStateOf<ChatModelSelection.Option?>(null) }
     var errorText by remember { mutableStateOf<String?>(null) }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         val option = pendingDownload
@@ -93,7 +96,7 @@ fun AIModelsScreen(prefs: VaultPreferencesRepository, onBack: () -> Unit) {
             Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp, vertical = 12.dp)) {
                 Text(stringResource(R.string.models_offline_notice), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
-                    "Выбирайте совместимую модель из каталога. Загрузка нужна только для установки файла; обработка и ответы ИИ выполняются локально.",
+                    stringResource(R.string.models_catalog_hint),
                     modifier = Modifier.padding(top = 8.dp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -135,14 +138,28 @@ fun AIModelsScreen(prefs: VaultPreferencesRepository, onBack: () -> Unit) {
             },
             onCancelDownload = { controller.cancel() },
             onDelete = { option ->
-                val filename = option.localFileName ?: return@ChatModelPickerSheet
-                scope.launch {
-                    withContext(Dispatchers.IO) { repo.deleteModel(filename) }
-                    installed = withContext(Dispatchers.IO) { repo.listVerifiedLocalModelFileNames() }
-                    if (activeModel == filename) prefs.setActiveGguf(null)
-                }
+                deleteTarget = option
             },
         )
+        deleteTarget?.let { target ->
+            AlertDialog(
+                onDismissRequest = { deleteTarget = null },
+                title = { Text(stringResource(R.string.chat_model_delete_confirm_title)) },
+                text = { Text(stringResource(R.string.chat_model_delete_confirm_body, target.title)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val filename = target.localFileName
+                        deleteTarget = null
+                        if (filename != null) scope.launch {
+                            withContext(Dispatchers.IO) { repo.deleteModel(filename) }
+                            installed = withContext(Dispatchers.IO) { repo.listVerifiedLocalModelFileNames() }
+                            if (activeModel == filename) prefs.setActiveGguf(null)
+                        }
+                    }) { Text(stringResource(R.string.chat_model_delete)) }
+                },
+                dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) } },
+            )
+        }
     }
 }
 

@@ -21,10 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.FabPosition
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -258,14 +255,6 @@ private fun EssentialMainNav(
                 }
             }
         },
-        floatingActionButton = {
-            if (currentRoute in topDestinations) {
-                FloatingActionButton(onClick = { navController.navigate("live") }) {
-                    Icon(Icons.Outlined.Mic, contentDescription = stringResource(R.string.home_fab_record))
-                }
-            }
-        },
-        floatingActionButtonPosition = FabPosition.End,
     ) { scaffoldPadding ->
     NavHost(
         navController = navController,

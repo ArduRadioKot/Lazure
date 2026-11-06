@@ -1,6 +1,6 @@
 <resources>
     <string name="nav_home">Home</string>
-    <string name="nav_vault">Vault</string>
+    <string name="nav_vault">Storage</string>
     <string name="nav_ai">AI</string>
     <string name="nav_settings">Settings</string>
     <string name="home_dashboard_title">Your workspace</string>
@@ -12,7 +12,7 @@
     <string name="home_action_import_hint">Add an audio file</string>
     <string name="home_action_models">AI models</string>
     <string name="home_action_models_hint">Manage local AI</string>
-    <string name="home_action_vault">Vault</string>
+    <string name="home_action_vault">Storage</string>
     <string name="home_action_vault_hint">Browse recordings</string>
     <string name="home_recent">Recent recordings</string>
     <string name="home_see_all">See all</string>
@@ -37,6 +37,7 @@
     <string name="models_installed">Installed locally</string>
     <string name="models_selected">Selected</string>
     <string name="models_none_installed">No compatible language model is installed.</string>
+    <string name="models_catalog_hint">Choose a compatible model from the catalog. Downloading is only used to install the file; inference and AI responses run locally.</string>
     <string name="models_speech_unavailable">An offline speech model is not included in this build.</string>
     <string name="models_diarization_unavailable">A local speaker diarization model is not included in this build.</string>
     <string name="models_offline_notice">Inference stays on this device. Optional downloads are not available while the app is offline.</string>
@@ -52,7 +53,7 @@
     <string name="live_paused">Recording paused</string>
     <string name="live_saving">Saving audio…</string>
     <string name="live_saved">Audio saved locally</string>
-    <string name="live_open_vault">Open Vault</string>
+    <string name="live_open_vault">Open Storage</string>
     <string name="recordings_search_hint">Search recordings</string>
     <string name="recordings_empty_filter">No recordings match this filter.</string>
     <string name="recordings_saved_here">Saved on this device</string>

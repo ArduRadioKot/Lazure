@@ -1,0 +1,18 @@
+<resources>
+    <string name="pin_section">Блокировка приложения</string>
+    <string name="pin_setting">PIN-код</string>
+    <string name="pin_enabled_hint">Запрашивается при входе в Lazure</string>
+    <string name="pin_disabled_hint">Код из 4 или 6 цифр</string>
+    <string name="pin_disable_title">Отключить PIN</string>
+    <string name="pin_setup_title">Создайте PIN</string>
+    <string name="pin_unlock_title">Вход в Lazure</string>
+    <string name="pin_digits">%1$d-значный</string>
+    <string name="pin_confirm_hint">Повторите PIN-код</string>
+    <string name="pin_input_hint">Введите PIN-код из 4 или 6 цифр</string>
+    <string name="pin_mismatch">PIN-коды не совпадают. Повторите ввод.</string>
+    <string name="pin_incorrect">Неверный PIN-код</string>
+    <string name="pin_locked">Слишком много попыток. Повторите через 30 секунд.</string>
+    <string name="pin_error">Не удалось проверить или сохранить PIN. Повторите попытку.</string>
+    <string name="pin_continue">Продолжить</string>
+    <string name="pin_submit">Подтвердить</string>
+</resources>

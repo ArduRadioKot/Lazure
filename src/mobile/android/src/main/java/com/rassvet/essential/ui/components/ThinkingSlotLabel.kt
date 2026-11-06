@@ -12,6 +12,10 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
@@ -124,7 +128,12 @@ fun ThinkingStatusRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(spacing),
     ) {
-        EssentialLogoThinkingMark(modifier = Modifier.size(logoSize))
+        Icon(
+            imageVector = Icons.Outlined.AutoAwesome,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(logoSize * 0.65f),
+        )
         ThinkingSlotLabel(
             color = color,
             style = style,

@@ -3,8 +3,8 @@ package com.rassvet.essential.ui.theme
 import androidx.compose.ui.graphics.Color
 
 
-val NeutralLightPrimary = Color(0xFF16C1D8)
-val NeutralLightOnPrimary = Color(0xFFFFFFFF)
+val NeutralLightPrimary = Color(0xFF00CED1)
+val NeutralLightOnPrimary = Color(0xFF003738)
 val NeutralLightBackground = Color(0xFFF9FAFB)
 val NeutralLightSurface = Color(0xFFFFFFFF)
 val NeutralLightOnBackground = Color(0xFF111827)
@@ -27,9 +27,16 @@ val EssentialDarkOnSurface = Color(0xFFFFFFFF)
 val EssentialDarkOnSurfaceVariant = Color(0xFF8E8E93)
 val EssentialDarkOutline = Color(0xFF2C2C2E)
 val EssentialDarkOutlineVariant = Color(0xFF3A3A3C)
-val EssentialDarkOnPrimary = Color(0xFFFFFFFF)
+val EssentialDarkOnPrimary = Color(0xFF003738)
 
 
-val EssentialBrand = Color(0xFF16C1D8)
+val EssentialBrand = Color(0xFF00CED1)
+
+val LazureLightContainer = Color(0xFFB5F3F2)
+val LazureLightOnContainer = Color(0xFF004F50)
+val LazureDarkContainer = Color(0xFF005B5D)
+val LazureDarkOnContainer = Color(0xFFA6F1F0)
+val LazureLightSecondary = Color(0xFF366667)
+val LazureDarkSecondary = Color(0xFF9ACFD0)
 
 

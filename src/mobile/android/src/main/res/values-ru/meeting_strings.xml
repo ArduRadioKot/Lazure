@@ -1,6 +1,6 @@
 <resources>
     <string name="nav_home">Главная</string>
-    <string name="nav_vault">Записи</string>
+    <string name="nav_vault">Storage</string>
     <string name="nav_ai">ИИ</string>
     <string name="nav_settings">Настройки</string>
     <string name="home_dashboard_title">Рабочее пространство</string>
@@ -12,7 +12,7 @@
     <string name="home_action_import_hint">Добавить аудиофайл</string>
     <string name="home_action_models">Модели ИИ</string>
     <string name="home_action_models_hint">Управление локальным ИИ</string>
-    <string name="home_action_vault">Хранилище</string>
+    <string name="home_action_vault">Storage</string>
     <string name="home_action_vault_hint">Все записи</string>
     <string name="home_recent">Недавние записи</string>
     <string name="home_see_all">Все</string>
@@ -37,6 +37,7 @@
     <string name="models_installed">Установлено локально</string>
     <string name="models_selected">Выбрана</string>
     <string name="models_none_installed">Нет совместимой установленной языковой модели.</string>
+    <string name="models_catalog_hint">Выберите совместимую модель из каталога. Скачивание используется только для установки; обработка и ответы ИИ выполняются локально.</string>
     <string name="models_speech_unavailable">В этой сборке нет локальной модели распознавания речи.</string>
     <string name="models_diarization_unavailable">В этой сборке нет локальной модели разделения говорящих.</string>
     <string name="models_offline_notice">Обработка выполняется на устройстве. Загрузка моделей недоступна без сети.</string>
@@ -52,7 +53,7 @@
     <string name="live_paused">Запись приостановлена</string>
     <string name="live_saving">Сохраняем аудио…</string>
     <string name="live_saved">Аудио сохранено локально</string>
-    <string name="live_open_vault">Открыть хранилище</string>
+    <string name="live_open_vault">Открыть Storage</string>
     <string name="recordings_search_hint">Поиск записей</string>
     <string name="recordings_empty_filter">Нет записей, соответствующих фильтру.</string>
     <string name="recordings_saved_here">Сохранено на этом устройстве</string>

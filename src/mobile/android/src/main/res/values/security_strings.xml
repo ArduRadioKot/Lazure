@@ -1,0 +1,18 @@
+<resources>
+    <string name="pin_section">App lock</string>
+    <string name="pin_setting">PIN code</string>
+    <string name="pin_enabled_hint">Required when opening Lazure</string>
+    <string name="pin_disabled_hint">Use a 4 or 6 digit code</string>
+    <string name="pin_disable_title">Disable PIN</string>
+    <string name="pin_setup_title">Create a PIN</string>
+    <string name="pin_unlock_title">Unlock Lazure</string>
+    <string name="pin_digits">%1$d digits</string>
+    <string name="pin_confirm_hint">Enter the same PIN again</string>
+    <string name="pin_input_hint">Enter your 4 or 6 digit PIN</string>
+    <string name="pin_mismatch">PIN codes do not match. Try again.</string>
+    <string name="pin_incorrect">Incorrect PIN</string>
+    <string name="pin_locked">Too many attempts. Try again in 30 seconds.</string>
+    <string name="pin_error">Unable to check or save the PIN. Try again.</string>
+    <string name="pin_continue">Continue</string>
+    <string name="pin_submit">Confirm</string>
+</resources>

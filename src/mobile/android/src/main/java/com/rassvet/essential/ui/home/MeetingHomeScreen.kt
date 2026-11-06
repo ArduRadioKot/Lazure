@@ -51,7 +51,6 @@ data class HomeAction(
     val title: String,
     val subtitle: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val prominent: Boolean = false,
     val onClick: () -> Unit,
 )
 
@@ -68,7 +67,7 @@ fun MeetingHomeScreen(
     onOpenNotes: () -> Unit,
 ) {
     val actions = listOf(
-        HomeAction(stringResource(R.string.home_action_live), stringResource(R.string.home_action_live_hint), Icons.Outlined.GraphicEq, true, onLive),
+        HomeAction(stringResource(R.string.home_action_live), stringResource(R.string.home_action_live_hint), Icons.Outlined.GraphicEq, onLive),
         HomeAction(stringResource(R.string.home_action_import), stringResource(R.string.home_action_import_hint), Icons.Outlined.AudioFile, onClick = onImport),
         HomeAction(stringResource(R.string.home_action_models), stringResource(R.string.home_action_models_hint), Icons.Outlined.ModelTraining, onClick = onModels),
         HomeAction(stringResource(R.string.home_action_vault), stringResource(R.string.home_action_vault_hint), Icons.Outlined.FolderOpen, onClick = onVault),
@@ -154,8 +153,8 @@ fun MeetingHomeScreen(
 
 @Composable
 private fun ActionTile(action: HomeAction) {
-    val container = if (action.prominent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerLow
-    val content = if (action.prominent) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    val container = MaterialTheme.colorScheme.surfaceContainerLow
+    val content = MaterialTheme.colorScheme.onSurface
     Card(
         onClick = action.onClick,
         modifier = Modifier.fillMaxSize(),
@@ -167,7 +166,7 @@ private fun ActionTile(action: HomeAction) {
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(action.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(action.subtitle, style = MaterialTheme.typography.bodySmall,
-                    color = if (action.prominent) content.copy(alpha = 0.84f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }

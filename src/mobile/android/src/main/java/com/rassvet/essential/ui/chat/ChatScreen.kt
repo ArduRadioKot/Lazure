@@ -75,6 +75,7 @@ fun ChatScreen(
     val semanticSearch by prefs.semanticSearchEnabled.collectAsState(initial = true)
     val hapticsEnabled by prefs.chatHapticsEnabled.collectAsState(initial = true)
     val haptics = rememberChatHaptics(hapticsEnabled)
+    val notesSuggestion = stringResource(R.string.chat_notes_suggestion)
     var input by remember { mutableStateOf("") }
     var apiBase by remember { mutableStateOf<String?>(null) }
     var token by remember { mutableStateOf<String?>(null) }
@@ -140,7 +141,7 @@ fun ChatScreen(
                 title = {
                     Column {
                         Text(stringResource(R.string.chat_title), style = MaterialTheme.typography.titleLarge)
-                        Text("Lazure AI", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.chat_local_assistant), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = {
@@ -224,16 +225,16 @@ fun ChatScreen(
                             Icon(Icons.Outlined.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(32.dp))
                         }
                     }
-                    Text("Спросите Lazure", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = 20.dp))
+                    Text(stringResource(R.string.chat_welcome_title), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = 20.dp))
                     Text(
-                        "Локальный ИИ поможет с заметками и идеями. Ответы генерируются выбранной моделью на устройстве.",
+                        stringResource(R.string.chat_welcome_body),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 8.dp, bottom = 20.dp),
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        AssistChip(onClick = { input = "О чём мои последние заметки?" }, label = { Text("Мои заметки") }, leadingIcon = { Icon(Icons.Outlined.AutoAwesome, null) })
-                        AssistChip(onClick = onModels, label = { Text("Выбрать модель") }, leadingIcon = { Icon(Icons.Outlined.Memory, null) })
+                        AssistChip(onClick = { input = notesSuggestion }, label = { Text(stringResource(R.string.chat_notes_chip)) }, leadingIcon = { Icon(Icons.Outlined.AutoAwesome, null) })
+                        AssistChip(onClick = onModels, label = { Text(stringResource(R.string.chat_models_chip)) }, leadingIcon = { Icon(Icons.Outlined.Memory, null) })
                     }
                 }
             } else {

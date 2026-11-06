@@ -57,7 +57,7 @@ private fun essentialChromeColorsForScheme(
     isDark: Boolean,
     scheme: androidx.compose.material3.ColorScheme?,
 ): EssentialChromeColors {
-    if (isDark) {
+    if (scheme == null) {
         return EssentialChromeColors(
             barSurface = EssentialDarkSurface,
             sendCircle = EssentialDarkSurfaceContainerHighest,

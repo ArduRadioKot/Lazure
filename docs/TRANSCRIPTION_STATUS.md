@@ -8,7 +8,7 @@ Updated 2026-11-07. The application remains **Lazure** and keeps its existing cy
 - Entry: MainActivity → EssentialApp. Existing markdown notes, chat history, FTS/index, settings, theme and local LLM paths are preserved.
 - Room is currently v8. Migrations through 7→8 preserve existing note/chat data while adding recording, transcript, speakers, summaries and recording chat-session structures.
 - Existing audio path supports SAF import, app-private file copies, duration metadata, playback and exact-schema JSON. No ASR or diarization inference implementation/model was bundled when audited.
-- The merged app manifest removes INTERNET; no cloud speech or text inference was added.
+- The app manifest permits network access for optional local model downloads only. Audio, transcript and LLM inference remain on-device; no cloud speech inference was added.
 
 ## Completed implementation
 
@@ -17,7 +17,7 @@ Updated 2026-11-07. The application remains **Lazure** and keeps its existing cy
 - Home dashboard with four actions, recent Room-backed recordings, four-section bottom navigation and an entry to the retained notes workspace. Existing Mont font and cyan/neutral Material 3 tokens are retained.
 - Vault with local SAF import, search, processing state display, audio playback and JSON export.
 - Microphone screen with runtime permission request, AAC/M4A local recording, timer, pause/resume on API 24+, stop, Room registration and Vault handoff. The unfinished recording is currently tied to the screen lifecycle, so this is not yet reliable background capture.
-- Model catalog enumerates verified local .litertlm files and supports import/select/remove; ASR and diarization sections disclose their missing model state rather than showing fake entries.
+- Model catalog restores the existing LiteRT-LM preset list with resumable download, selection and removal. It reports missing ASR/diarization models rather than showing fake entries.
 
 ## ASR / diarization candidate review
 

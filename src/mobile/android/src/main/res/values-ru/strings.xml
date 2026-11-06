@@ -34,17 +34,17 @@
     <string name="home_drawer_plan_free">Free plan</string>
     <string name="home_drawer_plan_pro">Pro plan</string>
     <string name="cd_open_settings">Настройки</string>
-    <string name="settings_section_vault">Хранилище</string>
-    <string name="settings_vault_current_label">Текущее хранилище</string>
+    <string name="settings_section_vault">Storage</string>
+    <string name="settings_vault_current_label">Текущее Storage</string>
     <string name="settings_vault_not_set">Не выбрано</string>
-    <string name="settings_change_vault">Сменить хранилище</string>
-    <string name="settings_change_vault_title">Хранилище заметок</string>
-    <string name="settings_change_vault_hint">Выберите существующее хранилище на устройстве или создайте новое. Заметки остаются в папке приложения.</string>
-    <string name="settings_create_new_vault">Создать новое хранилище</string>
+    <string name="settings_change_vault">Сменить Storage</string>
+    <string name="settings_change_vault_title">Storage заметок</string>
+    <string name="settings_change_vault_hint">Выберите существующее Storage на устройстве или создайте новое. Заметки остаются в папке приложения.</string>
+    <string name="settings_create_new_vault">Создать новое Storage</string>
     <string name="settings_existing_vaults">На этом устройстве</string>
-    <string name="settings_no_vaults_yet">Пока нет хранилищ — создайте первое.</string>
+    <string name="settings_no_vaults_yet">Пока нет Storage — создайте первое.</string>
     <string name="settings_vault_current">Сейчас используется</string>
-    <string name="settings_toast_vault_changed">Хранилище переключено</string>
+    <string name="settings_toast_vault_changed">Storage переключено</string>
     <string name="settings_section_quota">Облачный AI</string>
     <string name="settings_quota_title">Квота токенов</string>
     <string name="settings_quota_loading">Загрузка квоты…</string>
@@ -126,22 +126,22 @@
     <string name="onboarding_rich_part1">Lazure хранит заметки на вашем устройстве, поэтому вы можете быстро и конфиденциально работать с ними</string>
     <string name="onboarding_rich_offline">\u0020даже без сети</string>
     <string name="onboarding_rich_part2">. Ваши данные хранятся в защищённой локальной папке под названием</string>
-    <string name="onboarding_rich_vault">\u0020хранилище</string>
+    <string name="onboarding_rich_vault">\u0020Storage</string>
     <string name="onboarding_rich_suffix">.</string>
-    <string name="onboarding_choose_folder">Выбрать папку хранилища</string>
-    <string name="onboarding_create_vault">Создать новое хранилище</string>
+    <string name="onboarding_choose_folder">Выбрать папку Storage</string>
+    <string name="onboarding_create_vault">Создать новое Storage</string>
     <string name="onboarding_use_existing">Использовать существующее</string>
 
 
-    <string name="create_vault_headline">Выберите имя для вашего хранилища</string>
-    <string name="create_vault_name_label">Имя хранилища</string>
-    <string name="create_vault_location_section">Местоположение хранилища</string>
-    <string name="create_vault_storage_device_title">Хранилище устройства</string>
+    <string name="create_vault_headline">Выберите имя для вашего Storage</string>
+    <string name="create_vault_name_label">Имя Storage</string>
+    <string name="create_vault_location_section">Местоположение Storage</string>
+    <string name="create_vault_storage_device_title">Storage устройства</string>
     <string name="create_vault_storage_device_hint">• Разрешает другим приложениям доступ к данным Lazure.</string>
-    <string name="create_vault_storage_app_title">Хранилище приложения</string>
+    <string name="create_vault_storage_app_title">Storage приложения</string>
     <string name="create_vault_storage_app_hint">• Процесс удаления Lazure также удалит все ваши данные.</string>
-    <string name="create_vault_submit">Создать хранилище</string>
-    <string name="create_vault_error_exists">Хранилище с таким именем уже есть. Выберите другое имя.</string>
+    <string name="create_vault_submit">Создать Storage</string>
+    <string name="create_vault_error_exists">Storage с таким именем уже есть. Выберите другое имя.</string>
 
 
     <string name="home_ask_lazure_hint">Уточнить у Lazure...</string>
@@ -303,7 +303,7 @@
     <string name="settings_toast_passphrase_saved">Фраза сохранена локально</string>
     <string name="settings_upload_snapshot">Загрузить зашифрованный снимок</string>
     <string name="settings_restore_snapshot">Восстановить последний снимок</string>
-    <string name="settings_toast_pick_vault">Сначала выберите хранилище</string>
+    <string name="settings_toast_pick_vault">Сначала выберите Storage</string>
     <string name="settings_toast_login_first">Сначала войдите</string>
     <string name="settings_toast_passphrase_required">Нужна фраза шифрования</string>
     <string name="settings_toast_upload_ok">Снимок загружен</string>
@@ -415,8 +415,8 @@
     <string name="chat_model_cloud_subtitle_long">Облачный ассистент (сервер Lazure)</string>
     <string name="chat_model_local_subtitle">Локально · %1$s</string>
     <string name="chat_model_local_gguf_subtitle">@string/chat_model_local_subtitle</string>
-    <string name="vault_error_unavailable">Хранилище недоступно — переоткройте папку в настройках</string>
-    <string name="vault_error_no_write">Нет прав на запись в хранилище — переоткройте папку</string>
+    <string name="vault_error_unavailable">Storage недоступно — переоткройте папку в настройках</string>
+    <string name="vault_error_no_write">Нет прав на запись в Storage — переоткройте папку</string>
     <string name="drawer_rename_note_title">Переименовать заметку</string>
     <string name="drawer_rename_field_label">Имя файла</string>
     <string name="menu_rename">Переименовать</string>
@@ -506,15 +506,15 @@
     <string name="llm_pick_model_hint">Выберите облачную или локальную модель</string>
     <string name="llm_model_not_found">Модель не найдена: %1$s</string>
     <string name="llm_native_unavailable_prefix">Нативный движок недоступен: </string>
-    <string name="llm_no_vault_notes">Нет заметок в хранилище: %1$s</string>
+    <string name="llm_no_vault_notes">Нет заметок в Storage: %1$s</string>
     <string name="llm_no_matches">Нет совпадений: %1$s</string>
     <string name="llm_local_summary_header">Локальная модель · кратко</string>
     <string name="note_created_toast">Заметка «%1$s» создана</string>
     <string name="toast_rename_failed">Не удалось переименовать</string>
     <string name="toast_create_note_failed">Не удалось создать заметку</string>
     <string name="llm_choose_model_hint">Выберите модель: кнопка с иконкой хранилища справа вверху в чате.</string>
-    <string name="llm_stub_no_vault">Локальная модель пока не подключена, и в хранилище нет заметок для «%1$s». Создайте заметки или выберите облачную модель сверху справа.</string>
-    <string name="llm_stub_empty_search">В хранилище ничего не нашлось по запросу «%1$s».</string>
+    <string name="llm_stub_no_vault">Локальная модель пока не подключена, и в Storage нет заметок для «%1$s». Создайте заметки или выберите облачную модель сверху справа.</string>
+    <string name="llm_stub_empty_search">В Storage ничего не нашлось по запросу «%1$s».</string>
     <string name="llm_stub_no_match">По запросу «%1$s» в хранилище совпадений не нашлось.\n\nПодскажите больше деталей или попробуйте облачную модель (иконка хранилища сверху справа).</string>
     <string name="llm_stub_from_notes">На основе ваших заметок:</string>
     <string name="llm_stub_note_fallback">Заметка %1$d</string>

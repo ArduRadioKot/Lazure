@@ -26,6 +26,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.rassvet.essential.R
 import kotlinx.coroutines.delay
 
 @Composable
@@ -63,7 +65,7 @@ fun SplashScreen(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "Ваше пространство разговоров",
+                text = stringResource(R.string.lazure_tagline),
                 modifier = Modifier.padding(top = 6.dp).alpha(alpha.value),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

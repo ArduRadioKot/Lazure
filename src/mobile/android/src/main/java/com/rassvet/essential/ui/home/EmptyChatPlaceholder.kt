@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -30,7 +34,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.rassvet.essential.ui.components.EssentialLogoMark
 import com.rassvet.essential.ui.settings.ReaderTypographySettings
 import com.rassvet.essential.ui.theme.LocalEssentialChrome
 
@@ -39,7 +42,6 @@ private val PromptChipHeight = 32.dp
 @Composable
 fun EmptyChatPlaceholder(
     prompt: String,
-    logoStroke: Color,
     promptColor: Color,
     reader: ReaderTypographySettings,
     quickPrompts: List<String>,
@@ -55,10 +57,17 @@ fun EmptyChatPlaceholder(
             .padding(horizontal = 28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        EssentialLogoMark(
-            size = 112.dp,
-            strokeColor = logoStroke,
-        )
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.primaryContainer,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Mic,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(24.dp),
+            )
+        }
         Text(
             text = prompt,
             modifier = Modifier.offset(y = (-10).dp),
