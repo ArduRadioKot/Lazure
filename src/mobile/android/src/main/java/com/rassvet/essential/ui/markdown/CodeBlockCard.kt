@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import com.rassvet.essential.ui.theme.LazureIcons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -81,7 +82,7 @@ fun CodeBlockCard(
                 modifier = Modifier.padding(0.dp),
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.ContentCopy,
+                    imageVector = LazureIcons.ContentCopy,
                     contentDescription = stringResource(R.string.cd_copy_code),
                     tint = baseColor.copy(alpha = 0.75f),
                 )

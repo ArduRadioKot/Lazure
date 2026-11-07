@@ -4,6 +4,7 @@ import android.content.Context
 import com.rassvet.essential.data.local.VaultPreferencesRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
@@ -60,6 +61,7 @@ class HybridLocalLlmEngine(
                     systemOverlay = request.systemOverlay,
                     hasWebContext = request.webContext.isNotBlank(),
                 )
+            val thinking = prefs.thinkingEnabled.first()
             val userText =
                 buildUserMessage(
                     userMessage = request.userMessage,
@@ -67,7 +69,11 @@ class HybridLocalLlmEngine(
                     webContext = request.webContext,
                     modelId = modelId,
                     ramMb = ramMb,
-                )
+                ).let { text ->
+                    // Qwen3 soft switch: /think and /no_think are honoured by the chat template. DeepSeek R1 always reasons.
+                    if (modelId.contains("qwen3", ignoreCase = true)) text + if (thinking) "\n/think" else "\n/no_think" else text
+                }
+            val thinkFilter = ThinkFilter(hide = request.hideThinking || !thinking)
             val history =
                 request.history.map { (isUser, text) ->
                     LocalChatTurn(isUser = isUser, text = text)
@@ -107,8 +113,9 @@ class HybridLocalLlmEngine(
                     onTokenCount = { count -> LocalLlmGenerationMetrics.onNativeTokenCount(count) },
                 ).collect { chunk ->
                     gotAny = true
-                    emit(chunk)
+                    thinkFilter.feed(chunk).let { if (it.isNotEmpty()) emit(it) }
                 }
+                thinkFilter.finish().let { if (it.isNotEmpty()) emit(it) }
                 if (!gotAny) {
                     LocalLlmLog.w("LiteRT-LM stream empty")
                     emit("Модель не начала ответ. Перезапустите чат или смените модель.\n\n")

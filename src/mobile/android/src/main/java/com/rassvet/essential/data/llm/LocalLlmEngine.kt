@@ -11,6 +11,8 @@ data class LocalLlmRequest(
     val systemOverlay: String = "",
     val chatSessionKey: Long = 0L,
     val history: List<Pair<Boolean, String>> = emptyList(),
+    /** Strip the model's reasoning from the output (summaries, Q&A) instead of showing it as a quote. */
+    val hideThinking: Boolean = false,
 )
 
 

@@ -94,6 +94,7 @@ android {
         compose = true
         buildConfig = true
     }
+    androidResources { noCompress += listOf("onnx", "litertlm") }
     lint {
         abortOnError = false
         checkReleaseBuilds = true
@@ -169,6 +170,7 @@ dependencies {
     implementation(libs.androidx.documentfile)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.litertlm.android)
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.28.0")
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
@@ -178,6 +180,7 @@ dependencies {
     testImplementation("androidx.room:room-testing:2.7.0")
     testImplementation("org.robolectric:robolectric:4.14.1")
     testImplementation("androidx.test:core:1.6.1")
+    testImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation("androidx.room:room-testing:2.7.0")

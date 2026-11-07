@@ -19,8 +19,9 @@ import com.rassvet.essential.BuildConfig
         SpeakerEntity::class,
         SummaryEntity::class,
         RecordingChatSessionEntity::class,
+        RecordingChatMessageEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -41,6 +42,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun summaryDao(): SummaryDao
 
     abstract fun recordingChatSessionDao(): RecordingChatSessionDao
+
+    abstract fun recordingChatMessageDao(): RecordingChatMessageDao
 
     companion object {
         fun build(context: Context): AppDatabase {

@@ -15,4 +15,8 @@
     <string name="pin_error">Не удалось проверить или сохранить PIN. Повторите попытку.</string>
     <string name="pin_continue">Продолжить</string>
     <string name="pin_submit">Подтвердить</string>
+    <string name="pin_entered_count">Введено цифр: %1$d</string>
+    <string name="pin_delete_digit">Удалить последнюю цифру</string>
+    <string name="pin_legacy_length_hint">Выберите длину вашего PIN. После успешного входа выбор сохранится.</string>
+    <string name="pin_exact_length_hint">Введите PIN из %1$d цифр</string>
 </resources>

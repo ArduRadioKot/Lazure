@@ -1,0 +1,70 @@
+{
+  "runtime": {
+    "name": "sherpa-onnx",
+    "version": "2.0.1",
+    "abis": [
+      "arm64-v8a",
+      "x86_64"
+    ],
+    "libs": [
+      "libsherpa-onnx-jni.so (static-link-onnxruntime build)"
+    ],
+    "javaOrt": "com.microsoft.onnxruntime:onnxruntime-android:1.28.0 (runs DTLN)"
+  },
+  "models": [
+    {
+      "stage": "denoise",
+      "id": "dtln",
+      "asset": "models/denoise/dtln_1.onnx + dtln_2.onnx",
+      "license": "MIT (Westhausen & Meyer)",
+      "note": "Drives VAD only; measured to hurt GigaAM when used as ASR input.",
+      "url": "https://huggingface.co/niobures/DTLN/tree/main/models/DTLN/onnx"
+    },
+    {
+      "stage": "separation",
+      "id": "mossformer2-ss-16k-int8",
+      "asset": "models/separation/mossformer2_ss_16k_int8.onnx",
+      "license": "Apache-2.0 (ClearerVoice-Studio, alibabasglab)",
+      "note": "Exported with scripts/export_mossformer2.py (torch-vs-onnx max diff 6e-4), dynamic int8 MatMul (232 MB -> 98 MB, same SI-SNR on test mix). Fixed 2 s window.",
+      "url": "https://huggingface.co/alibabasglab/MossFormer2_SS_16K"
+    },
+    {
+      "stage": "vad",
+      "id": "silero-vad",
+      "asset": "models/vad/silero_vad.onnx",
+      "license": "MIT",
+      "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx"
+    },
+    {
+      "stage": "asr",
+      "id": "gigaam-v3-ctc-ru",
+      "asset": "models/asr-gigaam-v3-ru/model.int8.onnx",
+      "tokens": "models/asr-gigaam-v3-ru/tokens.txt",
+      "license": "MIT (GigaAM, SberDevices)",
+      "languages": [
+        "ru"
+      ],
+      "punctuation": true,
+      "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-ctc-punct-giga-am-v3-russian-2025-12-16.tar.bz2"
+    },
+    {
+      "stage": "diarization-segmentation",
+      "id": "pyannote-segmentation-3.0",
+      "asset": "models/diar-segmentation/model.int8.onnx",
+      "license": "MIT",
+      "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2"
+    },
+    {
+      "stage": "diarization-embedding",
+      "id": "3dspeaker-campplus-zh-en",
+      "asset": "models/diar-embedding/model.onnx",
+      "license": "Apache-2.0",
+      "note": "Stand-in for ECAPA-TDNN: sherpa-onnx ships no ECAPA export. Swap in an ECAPA ONNX of the same interface to match speech-decoder/README.",
+      "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/3dspeaker_speech_campplus_sv_zh_en_16k-common_advanced.onnx"
+    }
+  ],
+  "notImplemented": [
+    "ecapa: CAM++ used instead",
+    "AEC: platform AcousticEchoCanceler attached when the device has one; unverified on hardware"
+  ]
+}

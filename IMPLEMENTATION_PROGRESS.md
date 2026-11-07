@@ -88,3 +88,107 @@ Latest requested UI adjustment: Live now uses the same neutral card treatment as
 - Added repository tests for both PIN lengths, persistence without plaintext, rejection of wrong codes, disabling, overwrite prevention, cooldown and failure reset. Device validation of Android Keystore and lifecycle/UI remains required.
 
 Verification for this update: `./gradlew :app:testDebugUnitTest :app:assembleDebug` passed (50 unit tests, including 6 PIN tests; 0 failures/errors). The repository tests use a test HMAC key and a real temporary DataStore; they do not establish Android Keystore/device behavior. No new device visual or lifecycle test is claimed.
+
+## Home sizing, chat IME and motion correction — 2026-11-07
+
+- Home actions now use two equal-weight columns and an explicit 156 dp height for all four cards, replacing the nested adaptive lazy grid.
+- The root Scaffold owns IME padding and hides bottom navigation while the keyboard is open. Its padding is consumed before child screens lay out, preventing duplicate bottom insets; the chat composer sits above the keyboard.
+- Bounded the chat model selector to 152 dp, shortened its label and limited the heading to one line to prevent toolbar collisions. The empty state can scroll on short viewports. Removed the multiline hint above the input.
+- Navigation uses short 120/90 ms fades instead of full-screen slides. Streaming reply publication is capped to approximately 20 UI updates per second, and the thinking indicator no longer rotates animated text.
+- Static light-theme accent is now #007F82 with white foreground; dark theme uses #41B7BA with a dark foreground. Dynamic Color remains available. Saved Dynamic Color choice is no longer overwritten on every launch.
+- `./gradlew :app:assembleDebug :app:testDebugUnitTest` passed (50 tests). Keyboard geometry and frame smoothness still require device validation; no FPS/device visual result is claimed. Updated installable APK is placed in `dist/Lazure-debug.apk`.
+
+## PIN keypad and compact Home cards — 2026-11-07
+
+Replaced the PIN text field with a Material 3 numeric keypad (0–9, backspace), masked digit indicators and explicit confirmation. Setup, repeated entry, unlocking and disabling share this UI and the existing PIN verifier; the system keyboard is not needed. The form scrolls on short screens, keypad buttons have 54 dp touch height, and accessibility labels expose entered-digit count without exposing the PIN. Home action cards now have equal 140 dp height (previously 156 dp). `./gradlew :app:assembleDebug` passed; no device visual check is claimed. Updated APK: `dist/Lazure-debug.apk`.
+
+Splash branding adjustment: replaced the microphone and its rounded background with the actual application logo from `ic_splash_logo`, retaining the entrance scale animation and theme-aware contrast. `./gradlew :app:assembleDebug` passed; `dist/Lazure-debug.apk` updated.
+
+## PIN length-aware automatic unlock — 2026-11-07
+
+- PIN setup now saves digit count alongside the salted, Keystore-keyed verifier. Login renders exactly 4 or 6 dots and automatically verifies when the last digit is entered; the login/disable forms have no confirmation button. Setup retains its deliberate repeat/confirmation step.
+- Existing PINs without length metadata have a one-time 4/6 length selector. A successful verification persists the length; a failed attempt does not migrate metadata or bypass cooldown. No PIN reset or change is required.
+- Keypad buttons are true circles, up to 80 dp in diameter, with 12 dp spacing, responsive sizing and shared Material theme colors/typography. A reserved status area prevents layout jumps while checking or reporting errors.
+- Background completion cannot mark the app unlocked while the activity is stopped.
+- `./gradlew :app:testDebugUnitTest :app:assembleDebug` passed: 51 tests, 0 failures/errors. Tests cover both persisted lengths and legacy length migration; no device UI verification is claimed. Updated signed debug APK: `dist/Lazure-debug.apk`.
+
+## Retiring Essential notes and light-card contrast — 2026-11-07
+
+Removed notes, markdown editor, graph, legacy note-folder onboarding and note-storage management destinations from the live app navigation. New installs open the audio workspace without selecting/creating a notes folder. Removed Home notes entry and notes-specific settings. The AI chat no longer passes any note storage URI or enables note retrieval; its starter prompt and system identity describe conversations rather than note creation. Legacy Room note tables and shared rendering/retrieval code are retained for data compatibility; user files were not deleted.
+
+Static light theme now has a distinct tinted `surfaceContainerLow` and stronger outline tokens. Home action and recent-recording cards have a consistent 1 dp theme-aware border, so they remain visible with Dynamic Color disabled. `./gradlew :app:assembleDebug :app:testDebugUnitTest` passed (51 tests). Device visual validation remains outstanding. Updated installable APK: `dist/Lazure-debug.apk`.
+
+## Full UI/UX polish — 2026-11-07
+
+**Status: Completed for the requested UI scope.** Existing Compose screens remain in use. Home action cards have a 116 dp minimum instead of 140 dp (about 17% smaller); recording/import use primary containers, while models/archive use neutral surfaces. At narrow widths with large fonts they reflow to one column rather than clipping words. Removed the duplicate workspace headline and compacted the empty state with a real Start Recording action.
+
+Replaced the floating capsule with standard inset-aware Material 3 NavigationBar. Added 34 bundled official Material Symbols Rounded and their Apache 2.0 license, a coherent cool-neutral/turquoise light/dark palette and shared 24/18/13–14 sp typography. Localized active Storage labels as Архив / Archive and model descriptions/download units. Chat header and setting-value layout handle large text without competing horizontal labels. No audio/ML/PIN verification behavior was added or changed by this UI pass.
+
+Verification: `:app:assembleDebug` and 59 local tests passed, including seven Compose UI tests and seven contrast-pair checks in one test. `:app:connectedDebugAndroidTest` passed nine tests on processing-phone ARM64 Android 13/API 33: four small-viewport/theme/font UI cases plus a real MainActivity navigation smoke test and existing DB/package tests. MainActivity was checked through Home, Archive, AI, Settings, PIN setup, model catalog and recording screen. Screenshots are saved under `docs/ui-polish/` and were visually inspected. No physical-device, audio-capture or inference-quality claim is made by these UI checks.
+
+Full changed-file list, screenshot provenance and verification scope: `docs/UI_POLISH_REPORT.md`. Updated installable signed debug APK: `dist/Lazure-debug.apk`.
+
+
+## Stage 2 update — real offline speech pipeline (2026-11-07)
+
+**Status: Partial → working end to end on the ARM64 emulator.**
+
+- Model set is declared in `speech-decoder/models/manifest.json`; `speech-decoder/scripts/fetch_models.sh` downloads it into `assets/models` and `jniLibs` (sherpa-onnx 2.0.1 runtime = ONNX Runtime, arm64-v8a + x86_64).
+- Pipeline (`data/recording/SpeechPipeline.kt`): MediaCodec decode → mono 16 kHz resample (down and up) → Silero VAD → GigaAM v3 CTC (Russian, with punctuation) per VAD segment → pyannote-segmentation-3.0 + CAM++ embeddings clustering → per-token speaker split and timestamp alignment → Room segments/speakers.
+- `RecordingProcessor` is the single queue for Import, Live and Reprocess; interrupted jobs are marked failed on next launch; Vault detail has progress bar and Reprocess.
+- Chat microphone now uses on-device GigaAM (`LocalDictation`) instead of the system recognizer.
+- Verified on emulator: Russian 8 kHz call clip → "Сейчас к тебе приедет бригада, давай" / "Давай, я жду" in 1.4 s; two-speaker English clip → 2 speakers (Russian model, so text is garbage by design); in-memory Room E2E (register → process → exportJson) passed.
+- Not done: DTLN denoise, MossFormer separation and ECAPA from speech-decoder (no verified ONNX exports; CAM++ is the embedding stand-in), WER/DER/RTF on a labelled set, real microphone test, Summary / Ask-AI on recordings, foreground recording service. No accuracy numbers are claimed.
+- Re-check: `adb shell am instrument -w -e class com.rassvet.essential.data.recording.SpeechPipelineDeviceTest ru.myessentiality.essential.test/androidx.test.runner.AndroidJUnitRunner` (push wavs to `files/eval` via run-as).
+
+## Stages 6–7 update — recording summary and Ask AI (2026-11-07)
+
+- `RecordingAi` (map-reduce summary over ~3000-char chunks, TF-IDF retrieval with minute boost, [m:ss] citations) runs through `ChatEngine.completeLocalIsolated`, which skips vault and web research so transcript text never leaves the device.
+- Recording detail now has Summarize (saved to `recording_summaries`, shown as Markdown) and Ask AI (bottom sheet; source chips seek the audio). Both need a selected local LLM.
+- Verified: build, unit tests `RecordingAiTest` (timecodes, retrieval) pass; app launches without crash. NOT verified: actual LLM output quality — no LLM is downloaded on the emulator. Ask-AI history is in-memory only (no message table yet).
+
+## Stage 4 update — foreground recording service (2026-11-07)
+
+- `RecordingService` (foreground, type microphone, notification) owns MediaRecorder; `CaptureSession` exposes state/elapsed/level to `LiveRecordingScreen`, which now shows a level bar and restores state after leaving/returning.
+- Verified on emulator: start → service foreground → app sent to background → returned with timer continuing (0:18) → Stop → recording registered, processed through the pipeline and shown as "Transcript ready" (the emulator mic is silent, so the transcript is empty; no speech was actually recorded).
+- Not done: recovery of a partially written .m4a after process kill; real-voice microphone test on hardware.
+
+## Bundled LLM (2026-11-07)
+
+- Qwen3 0.6B (`assets/bundled_llm/Qwen3-0.6B.litertlm`, 614 MB, from litert-community/Qwen3-0.6B) ships in the APK; `BundledModelInstaller` copies it to `llm_models` on first launch and selects it if no model is active. APK is now ~1.0 GB and needs ~0.6 GB extra storage after install.
+- Verified on emulator: file installed, shown as selected in AI models. Summary / Ask AI output quality with this model is NOT yet verified.
+
+## Enhancement chain (2026-11-07)
+
+- Added `AudioDsp.kt` (HPF 80 Hz Butterworth, RMS normalisation with noise gate, compressor 3:1 + limiter) and `DtlnDenoiser.kt` (DTLN ONNX via onnxruntime-android 1.28.0, 512/128 blocks, delay-compensated). sherpa-onnx is now the static-ORT build to avoid a libonnxruntime.so version clash (VERS_1.28.2 vs 1.28.0).
+- Design finding (emulator smoke test, 6 s synthetic clips, one clip per condition, no WER computed): GigaAM transcribed DTLN-denoised audio slightly worse (e.g. "Ддавай", artefacts), so DTLN output feeds **VAD only**; ASR/diarization use HPF+normalised audio. With white noise at −5 dB SNR and low-pass noise at 0 dB, plain VAD found 0 speech segments while DTLN-driven VAD recovered the utterance (text had one error at −5 dB). Clean and +5 dB clips were unchanged.
+- Overlap: `overlapSeconds` measures overlapped speech from diarization turns and logs it. Separation (MossFormer) is NOT implemented: no ONNX export exists and a self-converted model is unverified; overlapped words go to the dominant speaker. AEC stage not implemented (file-based pipeline, MIC source).
+- Re-check: SpeechPipelineDeviceTest#transcribesPushedFiles logs raw / norm / dtln variants per clip.
+
+## AEC capture and separation status (2026-11-07)
+
+- Capture moved from MediaRecorder to `AudioRecord` (VOICE_RECOGNITION, mono, probes 16/48/44.1 kHz) with the platform `AcousticEchoCanceler` attached when the device provides one; output is WAV. Verified on emulator: 6 s capture → 192,044-byte 16 kHz WAV → processed. The emulator has no AEC effect (`AEC=false`), so AEC itself is unverified; it needs a device that implements it, with audio playing near the mic.
+- Separation NOT done. Conversion of MossFormer2_SS_16K (ClearerVoice, Apache-2.0) needs running third-party model code plus a downloaded checkpoint. The assistant's sandbox policy blocked executing it, so `speech-decoder/scripts/export_mossformer2.py` was written but never run. Next step: run it (or approve running it), verify torch/ONNX parity, then add the 2 s-window separator on overlapped regions, ASR per separated stream and speaker matching. Quality on Russian is unmeasured.
+
+## Overlapped speech separation (2026-11-07)
+
+- MossFormer2_SS_16K converted to ONNX (fixed 2 s window; torch vs ONNX max abs diff 6e-4 on random input) and int8-quantised (98 MB). Python check on a Russian+English two-voice mix: SI-SNR of separated sources 16.6 and 16.9 dB vs mixture 0.1 dB. This is one synthetic mix, not a benchmark.
+- Pipeline: diarization turns → overlap regions (≥ 0.4 s, ≥ 2 speakers) → separate (75 %-overlapped windows, permutation aligned by correlation) → GigaAM per source → tokens replace the mixed-audio tokens inside the region, per-speaker grouping so segments of different speakers may overlap in time. ASR model is released while the separator runs (memory); region budget 120 s.
+- Fix found on the way: diarization now gets HPF-only audio. On the compressed/normalised signal the test clip split into 4 speakers instead of 2.
+- Verified on ARM64 emulator: no crash/low-memory kill; synthetic overlapped clip (one Russian voice, time-stretched copy) gives two speaker streams with partial text, 3.2 s of overlap took ~14 s extra (RTF ≈ 4 on the emulator; phones unmeasured). Speaker↔source assignment uses exclusive-speech energy and falls back to arbitrary order when none exists (it did in this test). Accuracy on real Russian overlaps is NOT measured.
+
+## Thinking toggle and Live screen redesign (2026-11-07)
+
+- Settings → Chat and AI → "Thinking mode" (DataStore `thinking_enabled`, default off). For Qwen3 the engine appends the `/think` or `/no_think` soft switch; `ThinkFilter` (unit-tested, handles tags split across chunks) hides `<think>` blocks or, when thinking is on, shows them as a quote above the answer. Summaries and recording Q&A always hide reasoning. DeepSeek R1 always reasons; the toggle only controls whether it is shown. Not verified with a real Qwen3 generation on the emulator.
+- Live recording screen redesigned: status pill with pulsing REC dot, tabular timer, rolling waveform from live input level, large record/stop button with pulse ring, tonal pause/resume, saved-state card with Open Archive / Record another. Checked on emulator screenshots (idle, recording, saved); the emulator mic is silent, so the waveform stayed flat there.
+
+## Hardening pass (2026-11-07)
+
+- `.gitignore`: models, bundled LLM, sherpa/ORT JNI libs, APKs, `*.onnx/*.litertlm/*.pt`, build output, venvs and test audio are ignored; `dist/Lazure-debug.apk` was removed from the index (file kept on disk). Rebuild artifacts with `speech-decoder/scripts/fetch_models.sh` (+ `export_mossformer2.py` for separation).
+- Speaker↔source matching: separated sources are now matched with CAM++ embeddings against per-speaker reference embeddings built from that speaker's non-overlapped speech (best distinct pair over ALL speakers, so a wrongly labelled overlap pair is corrected), then energy, then arbitrary. Synthetic Russian+English test: the Russian words in the overlap were attributed to the Russian speaker (margin 0.93) where the diarization label pair was wrong. One synthetic clip, not a benchmark.
+- Separation cost: regions < 0.6 s skipped, longest regions first, 90 s wall-clock cap (`maxSeparationWallMs`), Settings → AI models toggles for separation and DTLN. Real-phone speed still unmeasured.
+- Long audio: enhancement chain is now chunked PCM16 (HPF, RMS norm, compressor, DTLN read/write blocks directly), so extra memory is ~2 B/sample/signal instead of several float copies. Also fixed a DTLN bug that dropped the last ~256 samples. Verified: 20-minute file (163 Russian utterances) processed in 126.5 s (RTF 0.10 on the emulator) with no OOM; diarization still needs one float copy of the audio (about 230 MB per hour). Recordings of 1+ hours are untested.
+- Crash recovery: WAV header is patched every ~2 s; on launch orphaned WAVs not in the database are repaired, registered as "Recovered recording" and processed. Verified by force-stopping the app mid-recording (9 s recovered, transcript produced).
+- Recording chat is persisted (Room v9, `recording_chat_messages`, migration 8→9 with an instrumented test; sources re-resolved by start time; "Clear chat").
+- Player: waveform from decoded audio (cached `.peaks`), tap/drag seek, speaker strip, playhead, current-segment highlight with auto-scroll, speaker colours. Verified on emulator screenshots.
+- AI models screen now lists LLM, ASR (GigaAM + Silero VAD), diarization, DTLN and MossFormer2 with real sizes/licences from the APK and on/off switches for the two optional stages. There is still exactly one real ASR and one diarization model, so nothing else can be "selected"; importing other models is not implemented.

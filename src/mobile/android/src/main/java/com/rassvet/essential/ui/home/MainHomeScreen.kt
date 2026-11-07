@@ -259,6 +259,7 @@ private fun EssentialChatInputBar(
     modelSpeedLabel: String? = null,
     onPickModel: () -> Unit,
     onSpeech: () -> Unit,
+    speechActive: Boolean = false,
     onSubmit: () -> Unit,
     canSend: Boolean,
     isFocused: Boolean,
@@ -503,7 +504,7 @@ private fun EssentialChatInputBar(
                         Icon(
                             imageVector = Icons.Outlined.Mic,
                             contentDescription = stringResource(R.string.cd_voice_input),
-                            tint = chrome.inputIcon,
+                            tint = if (speechActive) MaterialTheme.colorScheme.error else chrome.inputIcon,
                             modifier = Modifier.size(22.dp),
                         )
                     }
@@ -786,45 +787,39 @@ fun MainHomeScreen(
         }
     }
 
-    val speechLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val spoken =
-                result.data
-                    ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-                    ?.firstOrNull()
-                    ?.trim()
-            if (!spoken.isNullOrBlank()) {
-                chatState.draftText =
-                    if (chatState.draftText.isBlank()) {
-                        spoken
-                    } else {
-                        "${chatState.draftText.trimEnd()} $spoken"
-                    }
+    val dictation = remember { com.rassvet.essential.data.recording.LocalDictation(context.applicationContext) }
+    var dictating by remember { mutableStateOf(false) }
+    val dictationScope = rememberCoroutineScope()
+    DisposableEffect(Unit) { onDispose { dictation.cancel() } }
+
+    fun toggleDictation() {
+        if (dictating) {
+            dictating = false
+            dictationScope.launch {
+                val spoken = runCatching { dictation.stopAndTranscribe() }.getOrDefault("")
+                if (spoken.isNotBlank()) {
+                    chatState.draftText =
+                        if (chatState.draftText.isBlank()) spoken else "${chatState.draftText.trimEnd()} $spoken"
+                } else {
+                    Toast.makeText(context, R.string.toast_speech_unavailable, Toast.LENGTH_SHORT).show()
+                }
             }
+        } else if (dictation.start()) {
+            dictating = true
+        } else {
+            Toast.makeText(context, R.string.toast_speech_unavailable, Toast.LENGTH_SHORT).show()
         }
     }
 
+    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) toggleDictation()
+        else Toast.makeText(context, R.string.toast_speech_unavailable, Toast.LENGTH_SHORT).show()
+    }
+
     fun launchSpeechInput() {
-        val intent =
-            Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                val locales = AppCompatDelegate.getApplicationLocales()
-                val speechTag =
-                    if (!locales.isEmpty) {
-                        locales[0]?.toLanguageTag() ?: java.util.Locale.getDefault().toLanguageTag()
-                    } else {
-                        java.util.Locale.getDefault().toLanguageTag()
-                    }
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, speechTag)
-                putExtra(RecognizerIntent.EXTRA_PROMPT, context.getString(R.string.speech_recognition_prompt))
-            }
-        try {
-            speechLauncher.launch(intent)
-        } catch (_: ActivityNotFoundException) {
-            Toast.makeText(context, R.string.toast_speech_unavailable, Toast.LENGTH_SHORT).show()
-        }
+        val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+            context, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (granted || dictating) toggleDictation() else micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
     }
 
     LaunchedEffect(pendingNoteContextPulse) {
@@ -2041,6 +2036,7 @@ fun MainHomeScreen(
                     modelPickerOpen = true
                 },
                 onSpeech = { launchSpeechInput() },
+                speechActive = dictating,
                 onSubmit = { submitMessage(chatState.draftText) },
                 canSend = chatState.draftText.isNotBlank() || attachments.isNotEmpty(),
                 isFocused = isFocused,

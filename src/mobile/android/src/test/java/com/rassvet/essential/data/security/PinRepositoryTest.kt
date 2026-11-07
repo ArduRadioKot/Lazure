@@ -1,6 +1,8 @@
 package com.rassvet.essential.data.security
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import java.io.File
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -42,10 +44,12 @@ class PinRepositoryTest {
         for (pin in listOf("1234", "012345")) {
             repo.enable(pin)
             assertTrue(repo.enabled.first())
+            assertEquals(pin.length, PinRepository(store, signer) { clock }.digitCount.first())
             assertEquals(PinRepository.Result.Success, PinRepository(store, signer) { clock }.verify(pin))
             assertFalse(store.data.first().asMap().values.contains(pin))
             assertEquals(PinRepository.Result.Success, repo.verify(pin, disable = true))
             assertFalse(repo.enabled.first())
+            assertNull(repo.digitCount.first())
         }
     }
     @Test fun incorrectCodeCannotDisableLock() = runTest {
@@ -74,4 +78,18 @@ class PinRepositoryTest {
         try { repo.enable("9999"); fail("Replacing enabled PIN must fail") } catch (_: IllegalStateException) { }
         assertEquals(PinRepository.Result.Success, repo.verify("1234"))
     }
+    @Test fun legacyPinLengthMigratesOnlyAfterSuccessfulVerification() = runTest {
+        for (pin in listOf("1234", "123456")) {
+            repo.enable(pin)
+            store.edit { it.remove(intPreferencesKey("digit_count")) }
+            val reopened = PinRepository(store, signer) { clock }
+            assertNull(reopened.digitCount.first())
+            assertEquals(PinRepository.Result.Incorrect, reopened.verify("9999"))
+            assertNull(reopened.digitCount.first())
+            assertEquals(PinRepository.Result.Success, reopened.verify(pin))
+            assertEquals(pin.length, reopened.digitCount.first())
+            reopened.verify(pin, disable = true)
+        }
+    }
+
 }

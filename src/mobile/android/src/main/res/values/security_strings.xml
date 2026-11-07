@@ -15,4 +15,8 @@
     <string name="pin_error">Unable to check or save the PIN. Try again.</string>
     <string name="pin_continue">Continue</string>
     <string name="pin_submit">Confirm</string>
+    <string name="pin_entered_count">Digits entered: %1$d</string>
+    <string name="pin_delete_digit">Delete last digit</string>
+    <string name="pin_legacy_length_hint">Choose the length of your existing PIN. This choice is saved after a successful unlock.</string>
+    <string name="pin_exact_length_hint">Enter your %1$d-digit PIN</string>
 </resources>

@@ -62,3 +62,14 @@ data class RecordingChatSessionEntity(
     val title: String,
     @ColumnInfo(name = "created_at") val createdAt: Long,
 )
+
+@Entity(tableName = "recording_chat_messages", indices = [Index(value = ["recording_id", "created_at"])])
+data class RecordingChatMessageEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "recording_id") val recordingId: String,
+    val role: String,
+    val text: String,
+    /** Comma-separated start_ms of the transcript segments that were retrieved as sources. */
+    @ColumnInfo(name = "source_starts") val sourceStarts: String = "",
+    @ColumnInfo(name = "created_at") val createdAt: Long,
+)

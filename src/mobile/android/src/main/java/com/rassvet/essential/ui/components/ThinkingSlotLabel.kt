@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
+import com.rassvet.essential.ui.theme.LazureIcons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -129,7 +130,7 @@ fun ThinkingStatusRow(
         horizontalArrangement = Arrangement.spacedBy(spacing),
     ) {
         Icon(
-            imageVector = Icons.Outlined.AutoAwesome,
+            imageVector = LazureIcons.AutoAwesome,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(logoSize * 0.65f),

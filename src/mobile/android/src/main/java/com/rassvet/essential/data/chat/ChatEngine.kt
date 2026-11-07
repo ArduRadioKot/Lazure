@@ -118,13 +118,40 @@ class ChatEngine(
     }
 
 
+    /**
+     * Fully local completion for recording summaries/Q&A. Bypasses vault and web research so transcript
+     * text is never used as a search query and never leaves the device.
+     */
+    suspend fun completeLocalIsolated(
+        system: String,
+        user: String,
+        history: List<HistoryLine> = emptyList(),
+        modelId: String,
+        onChunk: (String) -> Unit = {},
+    ): String {
+        LocalLlmGenerationMetrics.onStreamStart()
+        try {
+            val req = LocalLlmRequest(
+                userMessage = user, vaultContext = "", webContext = "", modelId = modelId,
+                systemOverlay = system, history = history.map { it.isUser to it.text }, hideThinking = true,
+            )
+            val sb = StringBuilder()
+            localEngine.streamComplete(req).collect { chunk ->
+                sb.append(chunk); LocalLlmGenerationMetrics.onChunk(chunk); onChunk(chunk)
+            }
+            return sb.toString()
+        } finally {
+            LocalLlmGenerationMetrics.onStreamEnd()
+        }
+    }
+
     private fun buildLocalSystemOverlay(noteContext: PendingNoteContext?): String =
         buildString {
             appendLine(
                 "Ты — ассистент Lazure. Отвечай кратко. " +
                     "Если ниже есть блок «Справка из интернета» — опирайся на него и не говори, " +
                     "что у тебя нет доступа к интернету или актуальным данным. " +
-                    "Для новой заметки — markdown в ```note ... ```.",
+                    "Используй обычный Markdown для оформления ответа.",
             )
             appendLine(ChatDeviceClock.systemDateTimeLine())
             if (noteContext != null) {
@@ -140,12 +167,10 @@ class ChatEngine(
     ): String =
         buildString {
             appendLine(
-                "Ты — ассистент приложения Lazure (markdown-заметки в локальном хранилище). " +
-                    "У тебя нет прямого доступа на запись файлов: не утверждай, что заметка уже " +
-                    "сохранена или «хранилище обновлено». Если просят создать или добавить " +
-                    "новую заметку — верни готовый markdown внутри блока ```note ... ``` " +
-                    "(первая строка — заголовок `# Название`). Кратко поясни снаружи блока; " +
-                    "приложение сохранит файл после ответа.",
+                "Ты — локальный ассистент Lazure, приложения для работы с разговорами. " +
+                    "Отвечай по существу, используй обычный Markdown для оформления. " +
+                    "Не утверждай, что сохранил файл или изменил данные приложения. " +
+                    "Если сведений недостаточно, прямо сообщи об этом.",
             )
             appendLine(ChatDeviceClock.systemDateTimeLine())
             appendLine()

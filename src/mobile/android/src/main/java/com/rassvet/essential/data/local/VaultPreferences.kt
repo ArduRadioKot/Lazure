@@ -68,6 +68,9 @@ object VaultPreferencesKeys {
     val autoTitleChats = booleanPreferencesKey("auto_title_chats")
     val semanticSearchEnabled = booleanPreferencesKey("semantic_search_enabled")
     val streamReplies = booleanPreferencesKey("stream_replies")
+    val thinkingEnabled = booleanPreferencesKey("thinking_enabled")
+    val speechDenoiseEnabled = booleanPreferencesKey("speech_denoise_enabled")
+    val speechSeparationEnabled = booleanPreferencesKey("speech_separation_enabled")
     val chatHapticsEnabled = booleanPreferencesKey("chat_haptics_enabled")
     val typewriterEffect = booleanPreferencesKey("typewriter_effect")
 
@@ -161,6 +164,21 @@ class VaultPreferencesRepository(
 
     val streamReplies: Flow<Boolean> =
         context.dataStore.data.map { it[VaultPreferencesKeys.streamReplies] ?: true }
+
+    /** Reasoning mode for models that support it (Qwen3, DeepSeek R1). Off by default: faster on phones. */
+    val thinkingEnabled: Flow<Boolean> =
+        context.dataStore.data.map { it[VaultPreferencesKeys.thinkingEnabled] ?: false }
+
+    /** DTLN-driven speech detection (helps in noise). */
+    val speechDenoiseEnabled: Flow<Boolean> =
+        context.dataStore.data.map { it[VaultPreferencesKeys.speechDenoiseEnabled] ?: true }
+
+    /** MossFormer2 separation of overlapped speech (slower than real time on phones). */
+    val speechSeparationEnabled: Flow<Boolean> =
+        context.dataStore.data.map { it[VaultPreferencesKeys.speechSeparationEnabled] ?: true }
+
+    suspend fun setSpeechDenoiseEnabled(v: Boolean) { context.dataStore.edit { it[VaultPreferencesKeys.speechDenoiseEnabled] = v } }
+    suspend fun setSpeechSeparationEnabled(v: Boolean) { context.dataStore.edit { it[VaultPreferencesKeys.speechSeparationEnabled] = v } }
 
     val chatHapticsEnabled: Flow<Boolean> =
         context.dataStore.data.map { it[VaultPreferencesKeys.chatHapticsEnabled] ?: true }
@@ -359,7 +377,7 @@ class VaultPreferencesRepository(
             prefs.remove(VaultPreferencesKeys.openAiCompatModel)
             prefs.remove(VaultPreferencesKeys.geminiModel)
             prefs[VaultPreferencesKeys.cloudLlmProvider] = "local"
-            prefs[VaultPreferencesKeys.dynamicColor] = true
+            if (prefs[VaultPreferencesKeys.dynamicColor] == null) prefs[VaultPreferencesKeys.dynamicColor] = true
         }
     }
 

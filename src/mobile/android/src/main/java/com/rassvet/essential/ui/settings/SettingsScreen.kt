@@ -19,29 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.ChatBubbleOutline
-import androidx.compose.material.icons.outlined.Compress
-import androidx.compose.material.icons.outlined.DarkMode
-import androidx.compose.material.icons.outlined.Memory
-import androidx.compose.material.icons.outlined.Public
-import androidx.compose.material.icons.outlined.FormatSize
-import androidx.compose.material.icons.outlined.Palette
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.TextFormat
-import androidx.compose.material.icons.outlined.Logout
-import androidx.compose.material.icons.outlined.Title
-import androidx.compose.material.icons.outlined.Vibration
-import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Policy
-import androidx.compose.material.icons.outlined.Gavel
-import androidx.compose.material.icons.outlined.ReceiptLong
-import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -59,6 +36,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import com.rassvet.essential.ui.theme.LazureIcons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -114,8 +92,6 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     prefs: VaultPreferencesRepository,
     onBack: () -> Unit,
-    onLogout: () -> Unit,
-    onChangeVault: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -123,11 +99,8 @@ fun SettingsScreen(
     val fontSize by prefs.readerFontSizeSp.collectAsState(initial = 16f)
     val fontWeight by prefs.readerFontWeight.collectAsState(initial = 400)
     val streamReplies by prefs.streamReplies.collectAsState(initial = true)
+    val thinkingEnabled by prefs.thinkingEnabled.collectAsState(initial = false)
     val chatHaptics by prefs.chatHapticsEnabled.collectAsState(initial = true)
-    val typewriterEffect by prefs.typewriterEffect.collectAsState(initial = true)
-    val semanticSearch by prefs.semanticSearchEnabled.collectAsState(initial = true)
-    val autoTitleChats by prefs.autoTitleChats.collectAsState(initial = true)
-    val compressImages by prefs.compressImages.collectAsState(initial = true)
     val llmComputeBackend by prefs.llmComputeBackend.collectAsState(initial = LlmComputeBackend.CPU)
     val localWebResearch by prefs.localWebResearchEnabled.collectAsState(initial = true)
     val localWebResearchEndpoint by prefs.localWebResearchEndpoint.collectAsState(initial = "")
@@ -158,16 +131,6 @@ fun SettingsScreen(
     var paymentsLoading by remember { mutableStateOf(false) }
     var showPaymentsDialog by remember { mutableStateOf(false) }
     val cachedAccount by prefs.cachedMeAccount.collectAsState(initial = null)
-    val vaultStored by prefs.vaultTreeUri.collectAsState(initial = null)
-    val vaultLabel =
-        remember(vaultStored, context) {
-            val stored = vaultStored?.trim().orEmpty()
-            if (stored.isEmpty()) {
-                context.getString(R.string.settings_vault_not_set)
-            } else {
-                VaultDocuments.vaultDisplayName(context, stored)
-            }
-        }
     val reader = ReaderTypographySettings(fontId, fontSize, fontWeight)
     val isSignedIn = !authToken.isNullOrBlank()
     val accountLabel =
@@ -307,13 +270,13 @@ fun SettingsScreen(
                 title = {
                     Text(
                         text = stringResource(R.string.settings_title),
-                        style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Medium),
+                        style = MaterialTheme.typography.titleLarge,
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
+                            LazureIcons.ArrowBack,
                             contentDescription = stringResource(R.string.cd_back),
                         )
                     }
@@ -379,7 +342,7 @@ fun SettingsScreen(
 
             SettingsCard(Modifier.padding(horizontal = 20.dp)) {
                 ReaderSettingRow(
-                    icon = { Icon(Icons.Outlined.FormatSize, null, Modifier.size(20.dp)) },
+                    icon = { Icon(LazureIcons.FormatSize, null, Modifier.size(20.dp)) },
                     title = stringResource(R.string.settings_font_size),
                     value = fontSize.toInt().toString(),
                 )
@@ -396,7 +359,7 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                 )
                 ReaderSettingRow(
-                    icon = { Icon(Icons.Outlined.TextFormat, null, Modifier.size(20.dp)) },
+                    icon = { Icon(LazureIcons.TextFormat, null, Modifier.size(20.dp)) },
                     title = stringResource(R.string.settings_font_weight),
                     value = fontWeightLabel(fontWeight),
                     onClick = {
@@ -415,7 +378,7 @@ fun SettingsScreen(
 
             SettingsCard(Modifier.padding(horizontal = 20.dp)) {
                 ToggleSettingRow(
-                    icon = { Icon(Icons.Outlined.ChatBubbleOutline, null, Modifier.size(20.dp)) },
+                    icon = { Icon(LazureIcons.ChatBubbleOutline, null, Modifier.size(20.dp)) },
                     title = stringResource(R.string.settings_stream_replies),
                     subtitle = stringResource(R.string.settings_stream_replies_hint),
                     checked = streamReplies,
@@ -425,59 +388,30 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                 )
                 ToggleSettingRow(
-                    icon = { Icon(Icons.Outlined.Vibration, null, Modifier.size(20.dp)) },
+                    icon = { Icon(LazureIcons.AutoAwesome, null, Modifier.size(20.dp)) },
+                    title = stringResource(R.string.settings_thinking),
+                    subtitle = stringResource(R.string.settings_thinking_hint),
+                    checked = thinkingEnabled,
+                    onCheckedChange = { setBool(VaultPreferencesKeys.thinkingEnabled, it) },
+                )
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                )
+                ToggleSettingRow(
+                    icon = { Icon(LazureIcons.Vibration, null, Modifier.size(20.dp)) },
                     title = stringResource(R.string.settings_chat_haptics),
                     subtitle = stringResource(R.string.settings_chat_haptics_hint),
                     checked = chatHaptics,
                     onCheckedChange = { setBool(VaultPreferencesKeys.chatHapticsEnabled, it) },
                 )
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                )
-                ToggleSettingRow(
-                    icon = { Icon(Icons.Outlined.AutoAwesome, null, Modifier.size(20.dp)) },
-                    title = stringResource(R.string.settings_typewriter),
-                    subtitle = stringResource(R.string.settings_typewriter_hint),
-                    checked = typewriterEffect,
-                    onCheckedChange = { setBool(VaultPreferencesKeys.typewriterEffect, it) },
-                )
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                )
-                ToggleSettingRow(
-                    icon = { Icon(Icons.Outlined.Search, null, Modifier.size(20.dp)) },
-                    title = stringResource(R.string.settings_semantic_search),
-                    subtitle = stringResource(R.string.settings_semantic_search_hint),
-                    checked = semanticSearch,
-                    onCheckedChange = { setBool(VaultPreferencesKeys.semanticSearchEnabled, it) },
-                )
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                )
-                ToggleSettingRow(
-                    icon = { Icon(Icons.Outlined.Title, null, Modifier.size(20.dp)) },
-                    title = stringResource(R.string.settings_auto_title_chats),
-                    subtitle = stringResource(R.string.settings_auto_title_chats_hint),
-                    checked = autoTitleChats,
-                    onCheckedChange = { setBool(VaultPreferencesKeys.autoTitleChats, it) },
-                )
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                )
-                ToggleSettingRow(
-                    icon = { Icon(Icons.Outlined.Compress, null, Modifier.size(20.dp)) },
-                    title = stringResource(R.string.settings_compress_images),
-                    subtitle = stringResource(R.string.settings_compress_images_hint),
-                    checked = compressImages,
-                    onCheckedChange = { setBool(VaultPreferencesKeys.compressImages, it) },
-                )
+
             }
 
             SettingsSectionTitle(stringResource(R.string.settings_local_llm_section))
 
             SettingsCard(Modifier.padding(horizontal = 20.dp)) {
                 ReaderSettingRow(
-                    icon = { Icon(Icons.Outlined.Memory, null, Modifier.size(20.dp)) },
+                    icon = { Icon(LazureIcons.Memory, null, Modifier.size(20.dp)) },
                     title = stringResource(R.string.settings_llm_compute_backend),
                     value =
                         when {
@@ -532,7 +466,7 @@ fun SettingsScreen(
 
             SettingsCard(Modifier.padding(horizontal = 20.dp)) {
                 ReaderSettingRow(
-                    icon = { Icon(Icons.Outlined.Language, null, Modifier.size(20.dp)) },
+                    icon = { Icon(LazureIcons.Language, null, Modifier.size(20.dp)) },
                     title = stringResource(R.string.settings_language),
                     value =
                         when (appLocaleTag) {
@@ -546,7 +480,7 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                 )
                 ReaderSettingRow(
-                    icon = { Icon(Icons.Outlined.DarkMode, null, Modifier.size(20.dp)) },
+                    icon = { Icon(LazureIcons.DarkMode, null, Modifier.size(20.dp)) },
                     title = stringResource(R.string.settings_theme),
                     value = when (themeMode) {
                         "dark" -> stringResource(R.string.settings_theme_dark)
@@ -568,7 +502,7 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                 )
                 ToggleSettingRow(
-                    icon = { Icon(Icons.Outlined.Palette, null, Modifier.size(20.dp)) },
+                    icon = { Icon(LazureIcons.Palette, null, Modifier.size(20.dp)) },
                     title = stringResource(R.string.settings_dynamic_color),
                     subtitle = stringResource(R.string.settings_dynamic_color_hint),
                     checked = dynamicColor,
@@ -576,22 +510,12 @@ fun SettingsScreen(
                 )
             }
 
-            SettingsSectionTitle(stringResource(R.string.settings_section_vault))
-
+            SettingsSectionTitle(stringResource(R.string.nav_vault))
             SettingsCard(Modifier.padding(horizontal = 20.dp)) {
                 ReaderSettingRow(
-                    icon = { Icon(Icons.Outlined.Folder, null, Modifier.size(20.dp)) },
-                    title = stringResource(R.string.settings_vault_current_label),
-                    value = vaultLabel,
-                )
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                )
-                ReaderSettingRow(
-                    icon = { Icon(Icons.Outlined.Folder, null, Modifier.size(20.dp)) },
-                    title = stringResource(R.string.settings_change_vault),
-                    value = "",
-                    onClick = onChangeVault,
+                    icon = { Icon(LazureIcons.Folder, null, Modifier.size(20.dp)) },
+                    title = stringResource(R.string.recordings_title),
+                    value = stringResource(R.string.recordings_saved_here),
                 )
             }
 
@@ -807,7 +731,7 @@ internal fun SettingsSectionTitle(text: String) {
     Text(
         text = text,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+        style = MaterialTheme.typography.titleLarge,
         modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
     )
 }
@@ -903,17 +827,10 @@ private fun ReaderSettingRow(
             icon()
         }
         Spacer(Modifier.width(14.dp))
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            text = value,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium),
-        )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyLarge)
+            if (value.isNotBlank()) Text(value, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
 

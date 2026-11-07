@@ -79,4 +79,25 @@ class AppDatabaseMigrationTest {
         }
         db.close()
     }
+
+    @Test
+    fun migration8To9CreatesRecordingChatMessagesAndKeepsRecordings() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val callback = object : SupportSQLiteOpenHelper.Callback(8) {
+            override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE recordings (id TEXT NOT NULL PRIMARY KEY, title TEXT NOT NULL)")
+                db.execSQL("INSERT INTO recordings VALUES ('r1','Keep me')")
+            }
+            override fun onUpgrade(db: androidx.sqlite.db.SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+        }
+        context.deleteDatabase("migration-8-test.db")
+        val helper = FrameworkSQLiteOpenHelperFactory().create(
+            SupportSQLiteOpenHelper.Configuration.builder(context).name("migration-8-test.db").callback(callback).build())
+        val db = helper.writableDatabase
+        AppDatabaseMigrations.MIGRATION_8_9.migrate(db)
+        db.execSQL("INSERT INTO recording_chat_messages (recording_id, role, text, created_at) VALUES ('r1','user','hi',1)")
+        db.query("SELECT title FROM recordings").use { assertTrue(it.moveToFirst()); assertEquals("Keep me", it.getString(0)) }
+        db.query("SELECT text, source_starts FROM recording_chat_messages").use { assertTrue(it.moveToFirst()); assertEquals("hi", it.getString(0)); assertEquals("", it.getString(1)) }
+        helper.close()
+    }
 }

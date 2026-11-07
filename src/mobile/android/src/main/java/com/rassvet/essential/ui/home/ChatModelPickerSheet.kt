@@ -29,15 +29,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Cloud
-import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.Memory
-import androidx.compose.material.icons.outlined.Pause
-import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.WavyProgressIndicatorDefaults
+import com.rassvet.essential.ui.theme.LazureIcons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -53,6 +45,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -79,14 +73,15 @@ fun ChatModelPickerPill(
             .clip(shape)
             .background(chrome.sheetContainer)
             .border(1.dp, chrome.sheetBorder, shape)
-            .clickable(interactionSource = tap, indication = null, onClick = onClick)
+            .clickable(onClick = onClick)
+            .heightIn(min = 48.dp)
             .padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
             color = chrome.sheetText,
-            style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium),
+            style = MaterialTheme.typography.labelLarge,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f, fill = false),
@@ -96,7 +91,7 @@ fun ChatModelPickerPill(
             Text(
                 text = speedLabel,
                 color = chrome.sheetMuted,
-                style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Normal),
+                style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
             )
         }
@@ -173,7 +168,7 @@ fun BoxScope.ChatModelPickerSheet(
                 ) {
                     IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.CenterStart)) {
                         Icon(
-                            Icons.Outlined.Close,
+                            LazureIcons.Close,
                             contentDescription = stringResource(R.string.cd_close),
                             tint = chrome.sheetText,
                             modifier = Modifier.size(22.dp),
@@ -182,11 +177,7 @@ fun BoxScope.ChatModelPickerSheet(
                     Text(
                         text = stringResource(R.string.chat_pick_model),
                         color = chrome.sheetText,
-                        style = TextStyle(
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            lineHeight = 22.sp,
-                        ),
+                        style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.align(Alignment.Center),
                     )
                 }
@@ -194,7 +185,7 @@ fun BoxScope.ChatModelPickerSheet(
                 Text(
                     text = stringResource(R.string.chat_pick_model_device_hint, deviceRamMb),
                     color = chrome.sheetMuted,
-                    style = TextStyle(fontSize = 12.sp, lineHeight = 16.sp),
+                    style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
                 )
 
@@ -214,7 +205,7 @@ fun BoxScope.ChatModelPickerSheet(
                     if (cloud.isNotEmpty()) {
                         ModelSectionLabel(
                             text = stringResource(R.string.chat_models_cloud),
-                            icon = Icons.Outlined.Cloud,
+                            icon = LazureIcons.Cloud,
                         )
                         cloud.forEach { option ->
                             CloudModelOptionRow(
@@ -234,7 +225,7 @@ fun BoxScope.ChatModelPickerSheet(
                         }
                         ModelSectionLabel(
                             text = stringResource(R.string.chat_models_local),
-                            icon = Icons.Outlined.Memory,
+                            icon = LazureIcons.Memory,
                         )
                         local.forEach { option ->
                             val fileName = option.localFileName
@@ -302,7 +293,7 @@ private fun ModelSectionLabel(
         Text(
             text = text,
             color = chrome.sheetMuted,
-            style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium),
+            style = MaterialTheme.typography.labelMedium,
         )
     }
 }
@@ -327,7 +318,7 @@ private fun CloudModelOptionRow(
                     Text(
                         text = sub,
                         color = LocalEssentialChrome.current.sheetMuted,
-                        style = TextStyle(fontSize = 12.sp, lineHeight = 16.sp),
+                        style = MaterialTheme.typography.bodySmall,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 2.dp),
@@ -336,7 +327,7 @@ private fun CloudModelOptionRow(
             }
             if (selected) {
                 Icon(
-                    Icons.Outlined.Check,
+                    LazureIcons.Check,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp),
@@ -378,7 +369,7 @@ private fun LocalModelCard(
                     Text(
                         text = option.title,
                         color = chrome.sheetText,
-                        style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -387,7 +378,7 @@ private fun LocalModelCard(
                         Text(
                             text = stringResource(R.string.chat_model_recommended),
                             color = colorScheme.primary,
-                            style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                            style = MaterialTheme.typography.labelMedium,
                         )
                     }
                 }
@@ -397,7 +388,7 @@ private fun LocalModelCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
-                        Icons.Outlined.Download,
+                        LazureIcons.Download,
                         contentDescription = null,
                         tint = chrome.sheetMuted,
                         modifier = Modifier.size(14.dp),
@@ -406,7 +397,7 @@ private fun LocalModelCard(
                     Text(
                         text = option.sizeLabel ?: option.subtitle.orEmpty(),
                         color = chrome.sheetMuted,
-                        style = TextStyle(fontSize = 12.sp),
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
 
@@ -428,7 +419,7 @@ private fun LocalModelCard(
                     if (onDelete != null) {
                         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
                             Icon(
-                                Icons.Outlined.DeleteOutline,
+                                LazureIcons.DeleteOutline,
                                 contentDescription = stringResource(R.string.chat_model_delete),
                                 tint = chrome.sheetMuted,
                                 modifier = Modifier.size(18.dp),
@@ -438,7 +429,7 @@ private fun LocalModelCard(
                     when {
                         selected -> {
                             Icon(
-                                Icons.Outlined.Check,
+                                LazureIcons.Check,
                                 contentDescription = null,
                                 tint = colorScheme.primary,
                                 modifier = Modifier.size(22.dp),
@@ -470,17 +461,17 @@ private fun LocalModelCard(
                     progress != null && totalBytes != null && totalBytes > 0L ->
                         stringResource(
                             R.string.chat_model_download_progress,
-                            LocalModelCatalog.formatDownloadSize(bytesDownloaded),
-                            LocalModelCatalog.formatDownloadSize(totalBytes),
+                            android.text.format.Formatter.formatShortFileSize(LocalContext.current, bytesDownloaded),
+                            android.text.format.Formatter.formatShortFileSize(LocalContext.current, totalBytes),
                         )
                     bytesDownloaded > 0L ->
-                        LocalModelCatalog.formatDownloadSize(bytesDownloaded)
+                        android.text.format.Formatter.formatShortFileSize(LocalContext.current, bytesDownloaded)
                     else -> stringResource(R.string.chat_model_downloading)
                 }
             Text(
                 text = downloadedLabel,
                 color = chrome.sheetMuted,
-                style = TextStyle(fontSize = 12.sp),
+                style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 12.dp),
             )
             ModelDownloadWavyProgress(
@@ -496,21 +487,21 @@ private fun LocalModelCard(
                 if (onPause != null) {
                     DownloadControlChip(
                         label = stringResource(R.string.chat_model_download_pause),
-                        icon = Icons.Outlined.Pause,
+                        icon = LazureIcons.Pause,
                         onClick = onPause,
                     )
                 }
                 if (onResume != null) {
                     DownloadControlChip(
                         label = stringResource(R.string.chat_model_download_resume),
-                        icon = Icons.Outlined.PlayArrow,
+                        icon = LazureIcons.PlayArrow,
                         onClick = onResume,
                     )
                 }
                 if (onCancelDownload != null) {
                     DownloadControlChip(
                         label = stringResource(R.string.chat_model_download_cancel),
-                        icon = Icons.Outlined.Close,
+                        icon = LazureIcons.Close,
                         onClick = onCancelDownload,
                     )
                 }
@@ -535,7 +526,7 @@ private fun DownloadActionChip(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            Icons.Outlined.Download,
+            LazureIcons.Download,
             contentDescription = null,
             tint = colorScheme.onPrimary,
             modifier = Modifier.size(16.dp),
@@ -544,7 +535,7 @@ private fun DownloadActionChip(
         Text(
             text = label,
             color = colorScheme.onPrimary,
-            style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium),
+            style = MaterialTheme.typography.labelLarge,
         )
     }
 }
@@ -570,7 +561,7 @@ private fun DownloadControlChip(
         Text(
             text = label,
             color = chrome.sheetText,
-            style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium),
+            style = MaterialTheme.typography.labelMedium,
         )
     }
 }
@@ -599,7 +590,7 @@ private fun ModelOptionShell(
             )
             .border(
                 width = 1.dp,
-                color = if (selected) colorScheme.primary else chrome.sheetBorder,
+                color = if (selected) colorScheme.primary.copy(alpha = 0.5f) else chrome.sheetBorder.copy(alpha = 0.35f),
                 shape = shape,
             )
             .clickable(

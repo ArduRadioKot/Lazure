@@ -4,21 +4,15 @@ import android.media.MediaPlayer
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.AudioFile
-import androidx.compose.material.icons.outlined.FileUpload
-import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.AudioFile
 import androidx.compose.material3.*
+import com.rassvet.essential.ui.theme.LazureIcons
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,7 +34,9 @@ private enum class RecordingFilter { All, Completed, Processing, Failed }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, showBack: Boolean = true,
-    initialRecordingId: String? = null, startImportOnOpen: Boolean = false) {
+    initialRecordingId: String? = null, startImportOnOpen: Boolean = false,
+    chatEngine: com.rassvet.essential.data.chat.ChatEngine? = null,
+    prefs: com.rassvet.essential.data.local.VaultPreferencesRepository? = null) {
     val rows by repository.recordings.collectAsState(initial = emptyList())
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -59,14 +55,14 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
     LaunchedEffect(startImportOnOpen) { if (startImportOnOpen) importer.launch(arrayOf("audio/*")) }
     Scaffold(topBar = { TopAppBar(title = { Text(selected?.title ?: stringResource(R.string.recordings_title)) },
         navigationIcon = { if (showBack || selected != null) IconButton(onClick = { if (selected != null) selected = null else onBack() }) {
-            Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.recordings_back))
+            Icon(LazureIcons.ArrowBack, contentDescription = stringResource(R.string.recordings_back))
         } }, actions = { if (selected == null) IconButton(onClick = { importer.launch(arrayOf("audio/*")) }) {
-            Icon(Icons.Outlined.FileUpload, contentDescription = stringResource(R.string.recordings_import))
+            Icon(LazureIcons.FileUpload, contentDescription = stringResource(R.string.recordings_import))
         } }) }) { insets ->
         if (selected == null) {
             if (rows.isEmpty()) Column(Modifier.fillMaxSize().padding(insets).padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Icon(Icons.Outlined.AudioFile, null, tint = MaterialTheme.colorScheme.primary)
+                Icon(LazureIcons.AudioFile, null, tint = MaterialTheme.colorScheme.primary)
                 Text(stringResource(R.string.recordings_empty_title), style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(R.string.recordings_empty_body), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedButton(onClick = { importer.launch(arrayOf("audio/*")) }) { Text(stringResource(R.string.recordings_import)) }
@@ -102,7 +98,7 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
                     Card(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
                             Row(Modifier.fillMaxWidth().clickable { selected = row }.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Outlined.AudioFile, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 12.dp))
+                                Icon(LazureIcons.AudioFile, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 12.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(row.title, style = MaterialTheme.typography.titleSmall)
                                     Text(DateFormat.getDateTimeInstance().format(Date(row.createdAt)) + " · " + duration(row.durationMs),
@@ -112,10 +108,10 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
                             }
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                                 IconButton(onClick = { renameText = row.title; renameTarget = row }) {
-                                    Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.recordings_rename))
+                                    Icon(LazureIcons.Edit, contentDescription = stringResource(R.string.recordings_rename))
                                 }
                                 IconButton(onClick = { deleteTarget = row }) {
-                                    Icon(Icons.Outlined.DeleteOutline, contentDescription = stringResource(R.string.recordings_delete))
+                                    Icon(LazureIcons.DeleteOutline, contentDescription = stringResource(R.string.recordings_delete))
                                 }
                             }
                         }
@@ -126,7 +122,8 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
             val row = selected!!
             val segments by repository.observeSegments(row.id).collectAsState(initial = emptyList())
             val speakers by repository.speakers(row.id).collectAsState(initial = emptyList())
-            var player by remember(row.id) { mutableStateOf<MediaPlayer?>(null) }
+            val playerState = remember(row.id) { RecordingPlayerState(row.audioPath, row.durationMs) }
+            val listState = androidx.compose.foundation.lazy.rememberLazyListState()
             var json by remember { mutableStateOf<String?>(null) }
             var editTarget by remember { mutableStateOf<TranscriptSegmentEntity?>(null) }
             var editText by remember { mutableStateOf("") }
@@ -138,16 +135,52 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
                         .onFailure { error = it.message }
                 }
             }
-            DisposableEffect(row.id) { onDispose { player?.release() } }
-            LazyColumn(Modifier.fillMaxSize().padding(insets), contentPadding = PaddingValues(20.dp),
+            DisposableEffect(row.id) { onDispose { playerState.release() } }
+            val seekTo: (Long) -> Unit = { ms -> playerState.seekTo(ms, play = true) }
+            // The segment under the playhead (several when speakers overlap); the first one drives auto-scroll.
+            val activeIds = if (playerState.playing || playerState.positionMs > 0) segments.filter { playerState.positionMs >= it.startMs && playerState.positionMs < it.endMs }.map { it.id }.toSet() else emptySet()
+            val firstActive = segments.firstOrNull { it.id in activeIds }?.id
+            LaunchedEffect(firstActive, playerState.playing) {
+                if (playerState.playing && firstActive != null) {
+                    val idx = segments.indexOfFirst { it.id == firstActive }
+                    val header = listState.layoutInfo.totalItemsCount - segments.size - (if (error != null) 1 else 0)
+                    if (idx >= 0 && header >= 0) listState.animateScrollToItem(header + idx, scrollOffset = -200)
+                }
+            }
+            val summaries by repository.summaries(row.id).collectAsState(initial = emptyList())
+            var showChat by remember(row.id) { mutableStateOf(false) }
+            val ai = if (chatEngine != null && prefs != null) remember(row.id) { RecordingAiState(repository, chatEngine, prefs, row.id) } else null
+            LazyColumn(Modifier.fillMaxSize().padding(insets), state = listState, contentPadding = PaddingValues(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item { Text(statusText(row.processingStatus), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary) }
-                item { OutlinedButton(onClick = { runCatching {
-                    val active = player ?: MediaPlayer().also { it.setDataSource(File(row.audioPath).absolutePath); it.prepare(); player = it }
-                    active.start()
-                }.onFailure { error = it.message } }) {
-                    Icon(Icons.Outlined.PlayArrow, null); Text("  " + stringResource(R.string.recordings_playback))
+                item { PlayerBar(playerState, row.audioPath, segments, speakers) }
+                if (ai != null && row.processingStatus == "completed" && segments.isNotEmpty()) item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { scope.launch { ai.summarize() } }, enabled = !ai.summarizing) {
+                            Text(stringResource(R.string.rec_summarize))
+                        }
+                        FilledTonalButton(onClick = { showChat = true }) { Text(stringResource(R.string.rec_ask_ai)) }
+                    }
+                }
+                if (ai != null && ai.summarizing) item {
+                    Column { Text(stringResource(R.string.rec_summarizing) + " " + ai.progress); LinearProgressIndicator(Modifier.fillMaxWidth()) }
+                }
+                if (ai?.error != null) item { Text(ai.error.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                summaries.firstOrNull()?.let { sm -> item {
+                    Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(14.dp)) {
+                        Text(stringResource(R.string.rec_summary_title), style = MaterialTheme.typography.titleMedium)
+                        com.rassvet.essential.ui.editor.MarkdownContent(text = sm.content,
+                            baseColor = MaterialTheme.colorScheme.onSurface, mutedColor = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } }
                 } }
+                if (row.processingStatus == "processing" || row.processingStatus == "queued") item {
+                    LinearProgressIndicator(progress = { row.processingProgress / 100f }, modifier = Modifier.fillMaxWidth())
+                }
+                if (row.processingStatus != "processing" && row.processingStatus != "queued") item {
+                    OutlinedButton(onClick = { scope.launch { repository.reprocess(row.id) } }) {
+                        Text(stringResource(R.string.recordings_reprocess))
+                    }
+                }
                 item { OutlinedButton(onClick = { scope.launch { runCatching { repository.exportJson(row.id) }
                     .onSuccess { json = it; export.launch(row.title + ".json") }.onFailure { error = it.message } } }) {
                     Text(stringResource(R.string.recordings_json))
@@ -162,17 +195,24 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
                         }
                     }
                     items(segments, key = { it.id }) { segment ->
-                        Card(Modifier.fillMaxWidth().clickable { runCatching {
-                            val active = player ?: MediaPlayer().also { it.setDataSource(File(row.audioPath).absolutePath); it.prepare(); player = it }
-                            active.seekTo(segment.startMs.toInt()); if (!active.isPlaying) active.start()
-                        }.onFailure { error = it.message } }) {
+                        val active = segment.id in activeIds
+                        val spk = speakers.firstOrNull { it.rawSpeakerId == segment.speakerId }
+                        val tint = speakerColor(spk?.colorIndex ?: 0)
+                        Card(
+                            Modifier.fillMaxWidth().clickable { seekTo(segment.startMs) },
+                            colors = CardDefaults.cardColors(containerColor =
+                                if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh),
+                            border = if (active) androidx.compose.foundation.BorderStroke(2.dp, tint) else null,
+                        ) {
                             Column(Modifier.padding(12.dp)) {
-                                Text((speakers.firstOrNull { it.rawSpeakerId == segment.speakerId }?.displayName ?: segment.speakerId) +
-                                    " · " + duration(segment.startMs) + "–" + duration(segment.endMs),
-                                    style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                                Text(segment.text, style = MaterialTheme.typography.bodyMedium)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    androidx.compose.foundation.layout.Box(Modifier.size(10.dp).background(tint, androidx.compose.foundation.shape.CircleShape))
+                                    Text("  " + (spk?.displayName ?: segment.speakerId) + " · " + clock(segment.startMs) + "–" + clock(segment.endMs),
+                                        style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Text(segment.text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                                 TextButton(onClick = { editTarget = segment; editText = segment.text }) {
-                                    Icon(Icons.Outlined.Edit, null); Text(stringResource(R.string.transcript_edit))
+                                    Icon(LazureIcons.Edit, null); Text(stringResource(R.string.transcript_edit))
                                 }
                             }
                         }
@@ -180,6 +220,8 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
                 }
                 if (error != null) item { Text(error.orEmpty(), color = MaterialTheme.colorScheme.error) }
             }
+            if (showChat && ai != null) RecordingChatSheet(ai, onDismiss = { showChat = false }, onSeek = seekTo)
+            if (playerState.error != null) error = playerState.error
             editTarget?.let { segment -> AlertDialog(onDismissRequest = { editTarget = null },
                 title = { Text(stringResource(R.string.transcript_edit)) },
                 text = { OutlinedTextField(editText, { editText = it }, minLines = 3) },

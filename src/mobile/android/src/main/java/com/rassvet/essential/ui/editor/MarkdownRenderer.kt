@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import com.rassvet.essential.ui.theme.LazureIcons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -263,7 +264,7 @@ private fun TaskCheckbox(
     ) {
         if (checked) {
             Icon(
-                imageVector = Icons.Filled.Check,
+                imageVector = LazureIcons.Check,
                 contentDescription = null,
                 tint = Color.Black.copy(alpha = 0.82f),
                 modifier = Modifier.size(12.dp),

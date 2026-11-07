@@ -91,5 +91,16 @@ object AppDatabaseMigrations {
             }
         }
 
-    val ALL = arrayOf(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+    val MIGRATION_8_9 =
+        object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""CREATE TABLE IF NOT EXISTS recording_chat_messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, recording_id TEXT NOT NULL,
+                    role TEXT NOT NULL, text TEXT NOT NULL, source_starts TEXT NOT NULL DEFAULT '',
+                    created_at INTEGER NOT NULL)""")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_recording_chat_messages_recording_id_created_at ON recording_chat_messages(recording_id, created_at)")
+            }
+        }
+
+    val ALL = arrayOf(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
 }

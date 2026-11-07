@@ -11,6 +11,9 @@ interface RecordingDao {
     @Query("SELECT * FROM recordings ORDER BY created_at DESC")
     fun observeAll(): Flow<List<RecordingEntity>>
 
+    @Query("SELECT * FROM recordings")
+    suspend fun observeAllOnce(): List<RecordingEntity>
+
     @Query("SELECT * FROM recordings WHERE id = :id")
     suspend fun get(id: String): RecordingEntity?
 
@@ -25,6 +28,12 @@ interface RecordingDao {
 
     @Query("UPDATE recordings SET processing_status = :status, processing_progress = :progress, updated_at = :updatedAt WHERE id = :id")
     suspend fun updateStatus(id: String, status: String, progress: Int, updatedAt: Long): Int
+
+    @Query("SELECT * FROM recordings WHERE processing_status IN ('queued','processing')")
+    suspend fun interrupted(): List<RecordingEntity>
+
+    @Query("UPDATE recordings SET selected_asr_model_id = :asr, selected_diarization_model_id = :diar, language = :lang WHERE id = :id")
+    suspend fun setModels(id: String, asr: String, diar: String, lang: String): Int
 
     @Query("SELECT * FROM transcript_segments WHERE recording_id = :recordingId ORDER BY start_ms")
     suspend fun segments(recordingId: String): List<TranscriptSegmentEntity>
@@ -84,5 +93,17 @@ interface RecordingChatSessionDao {
     suspend fun delete(id: String, recordingId: String)
 
     @Query("DELETE FROM recording_chat_sessions WHERE recording_id = :recordingId")
+    suspend fun deleteForRecording(recordingId: String)
+}
+
+@Dao
+interface RecordingChatMessageDao {
+    @Query("SELECT * FROM recording_chat_messages WHERE recording_id = :recordingId ORDER BY created_at, id")
+    suspend fun messages(recordingId: String): List<RecordingChatMessageEntity>
+
+    @Insert
+    suspend fun insert(message: RecordingChatMessageEntity): Long
+
+    @Query("DELETE FROM recording_chat_messages WHERE recording_id = :recordingId")
     suspend fun deleteForRecording(recordingId: String)
 }

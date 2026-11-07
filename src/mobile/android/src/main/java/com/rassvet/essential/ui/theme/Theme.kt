@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme =
     darkColorScheme(
-        primary = EssentialBrand,
+        primary = LazureDarkPrimary,
         onPrimary = EssentialDarkOnPrimary,
         primaryContainer = LazureDarkContainer,
         onPrimaryContainer = LazureDarkOnContainer,
@@ -65,14 +65,14 @@ private val LightColorScheme =
         onTertiary = Color.White,
         tertiaryContainer = LazureLightContainer,
         onTertiaryContainer = LazureLightOnContainer,
-        inversePrimary = EssentialBrand,
+        inversePrimary = LazureDarkPrimary,
         surfaceTint = EssentialBrand,
         inverseSurface = Color(0xFF202626),
         inverseOnSurface = Color(0xFFE2E8E8),
         surfaceDim = NeutralLightSurfaceContainerHighest,
         surfaceBright = NeutralLightSurface,
         surfaceContainerLowest = NeutralLightSurface,
-        surfaceContainerLow = NeutralLightBackground,
+        surfaceContainerLow = Color(0xFFEDF3F4),
         background = NeutralLightBackground,
         onBackground = NeutralLightOnBackground,
         surface = NeutralLightSurface,

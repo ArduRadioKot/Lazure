@@ -4,9 +4,9 @@
     <string name="lazure_tagline">Your space for conversations</string>
     <string name="chat_local_assistant">On-device AI</string>
     <string name="chat_welcome_title">Ask Lazure</string>
-    <string name="chat_welcome_body">Your local AI can help with notes and ideas. Answers are generated on this device by your selected model.</string>
-    <string name="chat_notes_suggestion">What are my latest notes about?</string>
-    <string name="chat_notes_chip">My notes</string>
+    <string name="chat_welcome_body">Discuss ideas and ask questions. Answers are generated on this device.</string>
+    <string name="chat_notes_suggestion">Help me prepare a meeting agenda</string>
+    <string name="chat_notes_chip">Meeting agenda</string>
     <string name="chat_models_chip">Choose a model</string>
 
 
@@ -68,20 +68,20 @@
     <string name="onboarding_rich_part2">. Your data is stored in a secure local folder called</string>
     <string name="onboarding_rich_vault">\u0020storage</string>
     <string name="onboarding_rich_suffix">.</string>
-    <string name="onboarding_choose_folder">Select Storage folder</string>
-    <string name="onboarding_create_vault">Create a new Storage</string>
+    <string name="onboarding_choose_folder">Select Archive folder</string>
+    <string name="onboarding_create_vault">Create a new Archive</string>
     <string name="onboarding_use_existing">Use existing</string>
 
 
-    <string name="create_vault_headline">Choose a name for your Storage</string>
-    <string name="create_vault_name_label">Storage name</string>
-    <string name="create_vault_location_section">Storage location</string>
-    <string name="create_vault_storage_device_title">Device Storage</string>
+    <string name="create_vault_headline">Choose a name for your Archive</string>
+    <string name="create_vault_name_label">Archive name</string>
+    <string name="create_vault_location_section">Archive location</string>
+    <string name="create_vault_storage_device_title">Device Archive</string>
     <string name="create_vault_storage_device_hint">• Allows other applications to access Lazure data.</string>
-    <string name="create_vault_storage_app_title">Application Storage</string>
+    <string name="create_vault_storage_app_title">Application Archive</string>
     <string name="create_vault_storage_app_hint">• The Lazure uninstall process will also delete all your data.</string>
-    <string name="create_vault_submit">Create a Storage</string>
-    <string name="create_vault_error_exists">There is already a Storage with the same name. Choose a different name.</string>
+    <string name="create_vault_submit">Create a Archive</string>
+    <string name="create_vault_error_exists">There is already a Archive with the same name. Choose a different name.</string>
 
 
     <string name="home_ask_lazure_hint">Check with Lazure...</string>
@@ -252,7 +252,7 @@
     <string name="settings_toast_passphrase_saved">Phrase saved locally</string>
     <string name="settings_upload_snapshot">Upload encrypted snapshot</string>
     <string name="settings_restore_snapshot">Restore last snapshot</string>
-    <string name="settings_toast_pick_vault">First select a Storage</string>
+    <string name="settings_toast_pick_vault">First select a Archive</string>
     <string name="settings_toast_login_first">Login first</string>
     <string name="settings_toast_passphrase_required">Encryption phrase required</string>
     <string name="settings_toast_upload_ok">Photo uploaded</string>
@@ -260,17 +260,17 @@
     <string name="settings_toast_restore_ok">Restore completed</string>
     <string name="settings_toast_restore_fail">Restore error: %1$s</string>
     <string name="settings_restore_hint">Overwrites matching files in the storage root</string>
-    <string name="settings_section_vault">Storage</string>
-    <string name="settings_vault_current_label">Current Storage</string>
+    <string name="settings_section_vault">Archive</string>
+    <string name="settings_vault_current_label">Current Archive</string>
     <string name="settings_vault_not_set">Not selected</string>
-    <string name="settings_change_vault">Change Storage</string>
-    <string name="settings_change_vault_title">Notes Storage</string>
-    <string name="settings_change_vault_hint">Select an existing Storage location on your device or create a new one. Notes remain in the application folder.</string>
-    <string name="settings_create_new_vault">Create a new Storage</string>
+    <string name="settings_change_vault">Change Archive</string>
+    <string name="settings_change_vault_title">Notes Archive</string>
+    <string name="settings_change_vault_hint">Select an existing Archive location on your device or create a new one. Notes remain in the application folder.</string>
+    <string name="settings_create_new_vault">Create a new Archive</string>
     <string name="settings_existing_vaults">On this device</string>
-    <string name="settings_no_vaults_yet">There are no Storage yet - create the first one.</string>
+    <string name="settings_no_vaults_yet">There are no Archive yet - create the first one.</string>
     <string name="settings_vault_current">Currently in use</string>
-    <string name="settings_toast_vault_changed">Storage switched</string>
+    <string name="settings_toast_vault_changed">Archive switched</string>
     <string name="settings_section_quota">Cloud AI</string>
     <string name="settings_quota_title">Token quota</string>
     <string name="settings_quota_loading">Loading quota...</string>
@@ -371,7 +371,7 @@
     <string name="settings_gguf_cellular">@string/settings_local_model_cellular</string>
     <string name="settings_gguf_cellular_hint">@string/settings_local_model_cellular_hint</string>
 
-    <string name="settings_section_reading">Reading</string>
+    <string name="settings_section_reading">Text appearance</string>
     <string name="settings_section_chat">Chat and AI</string>
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_preview_label">Preview</string>
@@ -452,7 +452,7 @@
     <string name="llm_pick_model_hint">Choose a cloud or on-premises model</string>
     <string name="llm_model_not_found">Model not found: %1$s</string>
     <string name="llm_native_unavailable_prefix">Native engine not available:</string>
-    <string name="llm_no_vault_notes">No notes in Storage: %1$s</string>
+    <string name="llm_no_vault_notes">No notes in Archive: %1$s</string>
     <string name="llm_no_matches">No matches: %1$s</string>
     <string name="llm_local_summary_header">Local model in brief</string>
     <string name="note_created_toast">Note "%1$s" created</string>
@@ -460,14 +460,14 @@
     <string name="toast_create_note_failed">Failed to create note</string>
     <string name="llm_choose_model_hint">Select a model: button with a storage icon at the top right in the chat.</string>
     <string name="llm_stub_no_vault">The local model is not yet connected and there are no notes for "%1$s" in the store. Create notes or select a cloud model in the top right.</string>
-    <string name="llm_stub_empty_search">There was nothing found in the Storage for the query "%1$s".</string>
+    <string name="llm_stub_empty_search">There was nothing found in the Archive for the query "%1$s".</string>
     <string name="llm_stub_no_match">There were no matches for the query "%1$s" in the storage.\n\nPlease provide more details or try the cloud model (storage icon in the top right).</string>
     <string name="llm_stub_from_notes">Based on your notes:</string>
     <string name="llm_stub_note_fallback">Note %1$d</string>
     <string name="llm_stub_footer">(Local search without LLM. For a detailed answer, connect the cloud model at the top right.)</string>
     <string name="sheet_note_chat_examples">Ask about this note. For example: rewrite shorter, add a section, or fix what is wrong.</string>
     <string name="sheet_error_with_message">Error: %1$s</string>
-    <string name="settings_preview_sample">Lazure helps you think more clearly. Good typography makes long notes easier to read—choose a font and size that you\'re comfortable with.</string>
+    <string name="settings_preview_sample">Lazure helps you understand conversations. Choose a comfortable font and size for transcripts and AI responses.</string>
     <string name="llm_native_search_fallback">LiteRT-LM is unavailable — using local note search. Download a model from the list for full offline answers.\n\n</string>
     <string name="llm_model_not_found_detail">Model \'%1$s\' not found. Download it from the list on the right or update your selection.</string>
 
@@ -489,8 +489,8 @@
     <string name="chat_model_cloud_subtitle_long">Cloud assistant (Lazure server)</string>
     <string name="chat_model_local_subtitle">On-device · %1$s</string>
     <string name="chat_model_local_gguf_subtitle">@string/chat_model_local_subtitle</string>
-    <string name="vault_error_unavailable">Storage unavailable — reopen the folder in settings</string>
-    <string name="vault_error_no_write">No write access to Storage — reopen the folder</string>
+    <string name="vault_error_unavailable">Archive unavailable — reopen the folder in settings</string>
+    <string name="vault_error_no_write">No write access to Archive — reopen the folder</string>
     <string name="drawer_rename_note_title">Rename note</string>
     <string name="drawer_rename_field_label">File name</string>
     <string name="menu_rename">Rename</string>
@@ -537,6 +537,9 @@
         <item>Cooking…</item>
         <item>One more moment...</item>
     </string-array>
+    <string name="model_local_description">%1$s is a local language model for on-device responses.</string>
+    <string name="settings_thinking">Thinking mode</string>
+    <string name="settings_thinking_hint">The model reasons first, then answers: slower but often more accurate. Works with Qwen3 and DeepSeek R1</string>
 </resources>
 
 

@@ -2,6 +2,12 @@ package com.rassvet.essential.ui.chat
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.text.style.TextOverflow
+import com.rassvet.essential.data.llm.ChatModelSelection
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,15 +18,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -32,6 +34,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.rassvet.essential.ui.theme.LazureIcons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -56,7 +59,6 @@ import com.rassvet.essential.data.local.AppDatabase
 import com.rassvet.essential.data.local.VaultPreferencesRepository
 import com.rassvet.essential.ui.editor.MarkdownContent
 import com.rassvet.essential.ui.home.ChatModelPickerPill
-import com.rassvet.essential.ui.components.ThinkingStatusRow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,14 +74,12 @@ fun ChatScreen(
     val scope = rememberCoroutineScope()
     val activeGguf by prefs.activeGgufName.collectAsState(initial = null)
     val streamReplies by prefs.streamReplies.collectAsState(initial = true)
-    val semanticSearch by prefs.semanticSearchEnabled.collectAsState(initial = true)
     val hapticsEnabled by prefs.chatHapticsEnabled.collectAsState(initial = true)
     val haptics = rememberChatHaptics(hapticsEnabled)
     val notesSuggestion = stringResource(R.string.chat_notes_suggestion)
     var input by remember { mutableStateOf("") }
     var apiBase by remember { mutableStateOf<String?>(null) }
     var token by remember { mutableStateOf<String?>(null) }
-    var vaultUri by remember { mutableStateOf<String?>(null) }
     val messages = remember { mutableStateListOf<Pair<String, String>>() }
     var isThinking by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -88,11 +88,10 @@ fun ChatScreen(
         kotlinx.coroutines.coroutineScope {
             launch { prefs.apiBaseUrl.collect { apiBase = it } }
             launch { prefs.authToken.collect { token = it } }
-            launch { prefs.vaultTreeUri.collect { vaultUri = it } }
         }
     }
     LaunchedEffect(messages.size, isThinking) {
-        if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
+        if (messages.isNotEmpty()) listState.scrollToItem(messages.lastIndex)
     }
 
     val sendMessage: (String) -> Unit = { userText ->
@@ -103,6 +102,7 @@ fun ChatScreen(
             messages.add("assistant" to "")
             val history = messages.take(assistantIdx - 1).map { (role, content) -> ChatEngine.HistoryLine(role == "user", content) }
             val output = StringBuilder()
+            var lastPublishedAt = 0L
             val reply = runCatching {
                 chatEngine.streamReply(
                     ChatEngine.Request(
@@ -110,9 +110,9 @@ fun ChatScreen(
                         queryForSearch = userText,
                         history = history,
                         activeModel = activeGguf,
-                        vaultStored = vaultUri,
+                        vaultStored = null,
                         streamReplies = streamReplies,
-                        semanticSearchEnabled = semanticSearch,
+                        semanticSearchEnabled = false,
                         cloudMode = false,
                         cloudProvider = "local",
                         apiBase = apiBase,
@@ -125,7 +125,11 @@ fun ChatScreen(
                     ),
                 ) { chunk ->
                     if (streamReplies) output.append(chunk) else output.setLength(0).also { output.append(chunk) }
-                    messages[assistantIdx] = "assistant" to output.toString()
+                    val now = android.os.SystemClock.uptimeMillis()
+                    if (now - lastPublishedAt >= 50L) {
+                        messages[assistantIdx] = "assistant" to output.toString()
+                        lastPublishedAt = now
+                    }
                 }.text
             }.getOrElse { EssentialApiErrors.chatMessage(context, it) }
             isThinking = false
@@ -137,27 +141,10 @@ fun ChatScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(stringResource(R.string.chat_title), style = MaterialTheme.typography.titleLarge)
-                    Text(stringResource(R.string.chat_local_assistant), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
-                    }
-                },
-                actions = {
-                    ChatModelPickerPill(
-                        label = activeGguf?.substringBeforeLast('.')?.take(20)
-                            ?: stringResource(R.string.models_none_installed),
-                        onClick = onModels,
-                        modifier = Modifier.padding(end = 12.dp),
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+            ChatHeader(
+                modelName = activeGguf?.let(ChatModelSelection::shortLocalModelLabel),
+                onBack = onBack,
+                onModels = onModels,
             )
         },
         bottomBar = {
@@ -165,15 +152,9 @@ fun ChatScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surface)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    stringResource(R.string.chat_hint_local),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                )
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(
                         modifier = Modifier.weight(1f),
@@ -200,7 +181,7 @@ fun ChatScreen(
                         modifier = Modifier.size(54.dp),
                     ) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.chat_send))
+                            Icon(LazureIcons.Send, contentDescription = stringResource(R.string.chat_send))
                         }
                     }
                 }
@@ -208,11 +189,11 @@ fun ChatScreen(
         },
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),
         ) {
             if (messages.isEmpty()) {
                 Column(
-                    modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp),
+                    modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -222,7 +203,7 @@ fun ChatScreen(
                         modifier = Modifier.size(72.dp),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Outlined.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(32.dp))
+                            Icon(LazureIcons.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(32.dp))
                         }
                     }
                     Text(stringResource(R.string.chat_welcome_title), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = 20.dp))
@@ -233,8 +214,8 @@ fun ChatScreen(
                         modifier = Modifier.padding(top = 8.dp, bottom = 20.dp),
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        AssistChip(onClick = { input = notesSuggestion }, label = { Text(stringResource(R.string.chat_notes_chip)) }, leadingIcon = { Icon(Icons.Outlined.AutoAwesome, null) })
-                        AssistChip(onClick = onModels, label = { Text(stringResource(R.string.chat_models_chip)) }, leadingIcon = { Icon(Icons.Outlined.Memory, null) })
+                        AssistChip(onClick = { input = notesSuggestion }, label = { Text(stringResource(R.string.chat_notes_chip)) }, leadingIcon = { Icon(LazureIcons.AutoAwesome, null) })
+                        AssistChip(onClick = onModels, label = { Text(stringResource(R.string.chat_models_chip)) }, leadingIcon = { Icon(LazureIcons.Memory, null) })
                     }
                 }
             } else {
@@ -244,13 +225,31 @@ fun ChatScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 18.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    itemsIndexed(messages) { _, (role, content) -> ChatMessageItem(role, content) }
+                    itemsIndexed(messages, key = { index, _ -> index }) { _, (role, content) -> ChatMessageItem(role, content) }
                     if (isThinking) item { ThinkingBubble() }
                 }
             }
         }
     }
 
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun ChatHeader(modelName: String?, onBack: () -> Unit, onModels: () -> Unit) {
+    Column {
+        TopAppBar(
+            title = { Text(stringResource(R.string.chat_title), style = MaterialTheme.typography.titleLarge) },
+            navigationIcon = { IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) { Icon(LazureIcons.ArrowBack, contentDescription = stringResource(R.string.cd_back)) } },
+            actions = { IconButton(onClick = onModels, modifier = Modifier.size(48.dp)) { Icon(LazureIcons.Memory, contentDescription = stringResource(R.string.chat_models_chip)) } },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+        )
+        ChatModelPickerPill(
+            label = modelName ?: stringResource(R.string.chat_models_chip),
+            onClick = onModels,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp).heightIn(min = 48.dp),
+        )
+    }
 }
 
 @Composable
@@ -286,12 +285,9 @@ private fun ChatMessageItem(role: String, content: String) {
 @Composable
 private fun ThinkingBubble() {
     Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
-        ThinkingStatusRow(
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium,
-            logoSize = 30.dp,
-            spacing = 8.dp,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-        )
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+            Text(stringResource(R.string.thinking_label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }

@@ -18,3 +18,32 @@ local.properties
 .claude/
 *.docx
 *.pdf
+
+# --- Lazure speech/LLM artifacts (large; fetched by scripts, never committed) ---
+# Models bundled into the APK: run speech-decoder/scripts/fetch_models.sh (ASR/VAD/diarization/DTLN/separation)
+src/mobile/android/src/main/assets/models/
+# Bundled LLM (Qwen3 0.6B .litertlm): see docs / IMPLEMENTATION_PROGRESS.md
+src/mobile/android/src/main/assets/bundled_llm/
+# sherpa-onnx static JNI build (24+ MB per ABI), also placed by fetch_models.sh
+src/mobile/android/src/main/jniLibs/*/libsherpa-onnx-jni.so
+src/mobile/android/src/main/jniLibs/*/libonnxruntime.so
+*.onnx
+*.litertlm
+*.gguf
+*.pt
+*.pth
+# Built APKs / bundles (1+ GB with models; attach to a release instead)
+*.apk
+*.aab
+dist/*.apk
+# Gradle / Android build output
+**/build/
+.kotlin/
+# Python scratch (model export venvs, caches)
+venv/
+.venv/
+__pycache__/
+# Test audio and runtime recordings
+*.wav
+*.m4a
+*.peaks

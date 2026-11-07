@@ -1,6 +1,13 @@
 package com.rassvet.essential.ui.home
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.Button
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,16 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AudioFile
-import androidx.compose.material.icons.outlined.FolderOpen
-import androidx.compose.material.icons.outlined.GraphicEq
-import androidx.compose.material.icons.outlined.ModelTraining
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.IconButton
+import com.rassvet.essential.ui.theme.LazureIcons
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +50,7 @@ data class HomeAction(
     val subtitle: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val onClick: () -> Unit,
+    val primary: Boolean = false,
 )
 
 @Composable
@@ -64,62 +63,51 @@ fun MeetingHomeScreen(
     onVault: () -> Unit,
     onSearch: () -> Unit,
     onOpenRecording: (String) -> Unit,
-    onOpenNotes: () -> Unit,
 ) {
     val actions = listOf(
-        HomeAction(stringResource(R.string.home_action_live), stringResource(R.string.home_action_live_hint), Icons.Outlined.GraphicEq, onLive),
-        HomeAction(stringResource(R.string.home_action_import), stringResource(R.string.home_action_import_hint), Icons.Outlined.AudioFile, onClick = onImport),
-        HomeAction(stringResource(R.string.home_action_models), stringResource(R.string.home_action_models_hint), Icons.Outlined.ModelTraining, onClick = onModels),
-        HomeAction(stringResource(R.string.home_action_vault), stringResource(R.string.home_action_vault_hint), Icons.Outlined.FolderOpen, onClick = onVault),
+        HomeAction(stringResource(R.string.home_action_live), stringResource(R.string.home_action_live_hint), LazureIcons.GraphicEq, onLive, primary = true),
+        HomeAction(stringResource(R.string.home_action_import), stringResource(R.string.home_action_import_hint), LazureIcons.AudioFile, onClick = onImport, primary = true),
+        HomeAction(stringResource(R.string.home_action_models), stringResource(R.string.home_action_models_hint), LazureIcons.ModelTraining, onClick = onModels),
+        HomeAction(stringResource(R.string.home_action_vault), stringResource(R.string.home_action_vault_hint), LazureIcons.FolderOpen, onClick = onVault),
     )
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text("Lazure", fontWeight = FontWeight.SemiBold)
-                        Text(stringResource(R.string.home_privacy_local), style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    Text("Lazure", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                 },
                 actions = {
                     IconButton(onClick = onSearch) {
-                        Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.home_search))
+                        Icon(LazureIcons.Search, contentDescription = stringResource(R.string.home_search))
                     }
                 },
             )
         },
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            modifier = Modifier.fillMaxSize().padding(padding).testTag("home_feed"),
+            contentPadding = PaddingValues(start = 16.dp, top = 4.dp, end = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(stringResource(R.string.home_dashboard_title), style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold)
-                    Text(stringResource(R.string.home_dashboard_subtitle), style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            item {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 148.dp),
-                    modifier = Modifier.fillMaxWidth().height(260.dp),
-                    contentPadding = PaddingValues(0.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    userScrollEnabled = false,
-                ) {
-                    items(actions) { action -> ActionTile(action) }
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val columns = if (maxWidth < 280.dp * LocalDensity.current.fontScale) 1 else 2
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        actions.chunked(columns).forEach { pair ->
+                            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                pair.forEach { action ->
+                                    ActionTile(action, Modifier.weight(1f).fillMaxHeight(), horizontal = columns == 1)
+                                }
+                            }
+                        }
+                    }
                 }
             }
             item {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.home_recent), style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                    TextButton(onClick = onVault) { Text(stringResource(R.string.home_see_all)) }
+                    if (recent.isNotEmpty()) TextButton(onClick = onVault) { Text(stringResource(R.string.home_see_all)) }
                 }
             }
             if (recent.isEmpty()) {
@@ -129,11 +117,16 @@ fun MeetingHomeScreen(
                         shape = MaterialTheme.shapes.large,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                            Icon(Icons.Outlined.Shield, null, tint = MaterialTheme.colorScheme.primary)
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Icon(LazureIcons.GraphicEq, null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.home_recent_empty_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                            }
                             Text(stringResource(R.string.home_recent_empty), style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Button(onClick = onLive, modifier = Modifier.heightIn(min = 48.dp).testTag("home_empty_record")) {
+                                Text(stringResource(R.string.live_start))
+                            }
                         }
                     }
                 }
@@ -142,34 +135,41 @@ fun MeetingHomeScreen(
                     RecentRecordingRow(item, onClick = { onOpenRecording(item.id) })
                 }
             }
-            item {
-                TextButton(onClick = onOpenNotes, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.home_open_notes))
-                }
+
+        }
+    }
+}
+
+@Composable
+private fun ActionTile(action: HomeAction, modifier: Modifier = Modifier, horizontal: Boolean = false) {
+    val container = if (action.primary) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow
+    val content = if (action.primary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+    Card(
+        onClick = action.onClick,
+        modifier = modifier.heightIn(min = if (horizontal) 140.dp else 116.dp).testTag("home_action_" + action.title),
+        colors = CardDefaults.cardColors(containerColor = container, contentColor = content),
+        shape = MaterialTheme.shapes.large,
+    ) {
+        if (horizontal) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Icon(action.icon, contentDescription = null, modifier = Modifier.size(28.dp))
+                ActionText(action, content, Modifier.weight(1f))
+            }
+        } else {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(action.icon, contentDescription = null, modifier = Modifier.size(24.dp))
+                ActionText(action, content)
             }
         }
     }
 }
 
 @Composable
-private fun ActionTile(action: HomeAction) {
-    val container = MaterialTheme.colorScheme.surfaceContainerLow
-    val content = MaterialTheme.colorScheme.onSurface
-    Card(
-        onClick = action.onClick,
-        modifier = Modifier.fillMaxSize(),
-        colors = CardDefaults.cardColors(containerColor = container, contentColor = content),
-        shape = MaterialTheme.shapes.large,
-    ) {
-        Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.SpaceBetween) {
-            Icon(action.icon, contentDescription = null, modifier = Modifier.size(26.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(action.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text(action.subtitle, style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis)
-            }
-        }
+private fun ActionText(action: HomeAction, content: androidx.compose.ui.graphics.Color, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(action.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text(action.subtitle, style = MaterialTheme.typography.bodySmall,
+            color = if (action.primary) content.copy(alpha = 0.82f) else MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -184,7 +184,7 @@ private fun RecentRecordingRow(recording: RecordingEntity, onClick: () -> Unit) 
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
-                Icon(Icons.Outlined.AudioFile, null, Modifier.padding(11.dp).size(21.dp), tint = MaterialTheme.colorScheme.primary)
+                Icon(LazureIcons.AudioFile, null, Modifier.padding(11.dp).size(21.dp), tint = MaterialTheme.colorScheme.primary)
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(recording.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium,

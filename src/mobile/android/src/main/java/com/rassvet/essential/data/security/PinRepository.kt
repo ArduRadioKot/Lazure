@@ -30,6 +30,8 @@ class PinRepository internal constructor(
 ) {
     constructor(context: Context) : this(context.applicationContext.pinStore, ::signWithKeystore)
     val enabled = store.data.map { it[VERIFIER] != null }
+    // Null means a PIN created before length metadata was introduced.
+    val digitCount = store.data.map { it[LENGTH]?.takeIf { count -> count == 4 || count == 6 } }
 
     suspend fun enable(pin: String) = withContext(Dispatchers.IO) {
         require(isValidPin(pin))
@@ -37,7 +39,7 @@ class PinRepository internal constructor(
             check(store.data.first()[VERIFIER] == null)
             val salt = ByteArray(32).also { SecureRandom().nextBytes(it) }
             val verifier = signer(pin, salt)
-            store.edit { it[SALT] = encode(salt); it[VERIFIER] = encode(verifier); it[FAILURES] = 0; it[UNTIL] = 0 }
+            store.edit { it[SALT] = encode(salt); it[VERIFIER] = encode(verifier); it[LENGTH] = pin.length; it[FAILURES] = 0; it[UNTIL] = 0 }
         }
     }
 
@@ -51,7 +53,8 @@ class PinRepository internal constructor(
             )
             if (matches) {
                 store.edit {
-                    if (disable) { it.remove(VERIFIER); it.remove(SALT) }
+                    if (disable) { it.remove(VERIFIER); it.remove(SALT); it.remove(LENGTH) }
+                    else it[LENGTH] = pin.length
                     it[FAILURES] = 0; it[UNTIL] = 0
                 }
                 Result.Success
@@ -81,6 +84,7 @@ class PinRepository internal constructor(
         private val mutex = Mutex()
         private val VERIFIER = stringPreferencesKey("verifier")
         private val SALT = stringPreferencesKey("salt")
+        private val LENGTH = intPreferencesKey("digit_count")
         private val FAILURES = intPreferencesKey("failures")
         private val UNTIL = longPreferencesKey("retry_after")
         private fun encode(bytes: ByteArray) = Base64.encodeToString(bytes, Base64.NO_WRAP)

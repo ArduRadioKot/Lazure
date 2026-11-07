@@ -16,6 +16,20 @@ import kotlinx.coroutines.withContext
 class RecordingRepository(private val context: Context, private val db: AppDatabase) : TranscriptExporter {
     val recordings: Flow<List<RecordingEntity>> = db.recordingDao().observeAll()
     fun observeSegments(recordingId: String) = db.recordingDao().observeSegments(recordingId)
+    fun summaries(recordingId: String) = db.summaryDao().observe(recordingId)
+    suspend fun saveSummary(recordingId: String, content: String, modelId: String) = withContext(Dispatchers.IO) {
+        db.summaryDao().insert(com.rassvet.essential.data.local.SummaryEntity(
+            recordingId = recordingId, content = content, createdAt = System.currentTimeMillis(), modelId = modelId))
+    }
+    suspend fun chatMessages(recordingId: String) = withContext(Dispatchers.IO) { db.recordingChatMessageDao().messages(recordingId) }
+    suspend fun addChatMessage(recordingId: String, role: String, text: String, sourceStarts: List<Long>) = withContext(Dispatchers.IO) {
+        db.recordingChatMessageDao().insert(com.rassvet.essential.data.local.RecordingChatMessageEntity(
+            recordingId = recordingId, role = role, text = text, sourceStarts = sourceStarts.joinToString(","),
+            createdAt = System.currentTimeMillis()))
+    }
+    suspend fun clearChat(recordingId: String) = withContext(Dispatchers.IO) { db.recordingChatMessageDao().deleteForRecording(recordingId) }
+    suspend fun segmentsOnce(recordingId: String) = withContext(Dispatchers.IO) { db.recordingDao().segments(recordingId) }
+    suspend fun speakersOnce(recordingId: String) = withContext(Dispatchers.IO) { db.speakerDao().speakers(recordingId) }
     fun speakers(recordingId: String) = db.speakerDao().observeSpeakers(recordingId)
 
     suspend fun updateSegmentText(recordingId: String, segmentId: Long, text: String) = withContext(Dispatchers.IO) {
@@ -69,9 +83,10 @@ class RecordingRepository(private val context: Context, private val db: AppDatab
             val recording = RecordingEntity(
                 id = id, title = title.substringBeforeLast('.', title), audioPath = target.absolutePath,
                 durationMs = duration, createdAt = System.currentTimeMillis(),
-                processingStatus = "awaiting_asr",
+                processingStatus = "queued",
             )
             db.recordingDao().insert(recording)
+            RecordingProcessor.enqueue(context, db, id)
             recording
         } catch (error: Throwable) {
             target.delete()
@@ -97,19 +112,61 @@ class RecordingRepository(private val context: Context, private val db: AppDatab
             durationMs = duration,
             createdAt = now,
             updatedAt = now,
-            processingStatus = RecordingProcessingStatus.AwaitingAsr.storedValue,
+            processingStatus = RecordingProcessingStatus.Queued.storedValue,
         )
         db.recordingDao().insert(recording)
+        RecordingProcessor.enqueue(context, db, recording.id)
         recording
+    }
+
+    /** Re-run the full pipeline (retry after failure or reprocess a finished recording). */
+    suspend fun reprocess(id: String) = withContext(Dispatchers.IO) {
+        db.recordingDao().updateStatus(id, "queued", 0, System.currentTimeMillis())
+        RecordingProcessor.enqueue(context, db, id)
+    }
+
+    /**
+     * Recordings whose capture died with the process: a WAV in files/recordings that is not in the database.
+     * The service patches the header every ~2 s, so the audio up to the last patch (plus anything after it,
+     * recomputed here from the file length) is recovered and queued for normal processing.
+     */
+    suspend fun recoverOrphanedRecordings(): Int = withContext(Dispatchers.IO) {
+        val dir = File(context.filesDir, "recordings")
+        val known = db.recordingDao().observeAllOnce().map { it.audioPath }.toSet()
+        val active = com.rassvet.essential.service.CaptureSession.state.value.file?.absolutePath
+        var recovered = 0
+        dir.listFiles { f -> f.isFile && f.extension == "wav" }.orEmpty().forEach { f ->
+            if (f.absolutePath in known || f.absolutePath == active) return@forEach
+            if (System.currentTimeMillis() - f.lastModified() < 20_000) return@forEach   // still being written
+            if (f.length() <= 44 + 16_000) { f.delete(); return@forEach }
+            runCatching {
+                java.io.RandomAccessFile(f, "rw").use { raf ->
+                    raf.seek(24); val rate = Integer.reverseBytes(raf.readInt()).takeIf { it in 8000..96000 } ?: 16_000
+                    com.rassvet.essential.service.RecordingService.patchWavHeader(raf, rate, (raf.length() - 44) / 2)
+                }
+                registerRecordedAudio(f, "Recovered recording")
+                recovered++
+            }.onFailure { android.util.Log.w("RecordingRepository", "orphan recovery failed for ${f.name}", it) }
+        }
+        recovered
+    }
+
+    suspend fun recoverInterrupted() = withContext(Dispatchers.IO) {
+        recoverOrphanedRecordings()
+        RecordingProcessor.recoverInterrupted(db)
+        db.recordingDao().observeAllOnce().filter { it.processingStatus == "awaiting_asr" }
+            .forEach { reprocess(it.id) }
     }
 
     suspend fun delete(id: String) = withContext(Dispatchers.IO) {
         val recording = db.recordingDao().get(id) ?: return@withContext
+        RecordingProcessor.cancel(id)
         db.withTransaction {
             db.recordingDao().deleteSegments(id)
             db.speakerDao().deleteForRecording(id)
             db.summaryDao().deleteForRecording(id)
             db.recordingChatSessionDao().deleteForRecording(id)
+            db.recordingChatMessageDao().deleteForRecording(id)
             db.recordingDao().delete(id)
         }
         File(recording.audioPath).delete()

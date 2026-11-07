@@ -6,12 +6,12 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -21,6 +21,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import com.rassvet.essential.ui.theme.LazureIcons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -61,6 +62,10 @@ fun AIModelsScreen(prefs: VaultPreferencesRepository, onBack: () -> Unit) {
     var pendingDownload by remember { mutableStateOf<ChatModelSelection.Option?>(null) }
     var deleteTarget by remember { mutableStateOf<ChatModelSelection.Option?>(null) }
     var errorText by remember { mutableStateOf<String?>(null) }
+    var showLlmSheet by remember { mutableStateOf(false) }
+    val speechModels = remember { com.rassvet.essential.data.recording.SpeechModelCatalog.entries(context) }
+    val denoiseOn by prefs.speechDenoiseEnabled.collectAsState(initial = true)
+    val separationOn by prefs.speechSeparationEnabled.collectAsState(initial = true)
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         val option = pendingDownload
         pendingDownload = null
@@ -89,33 +94,67 @@ fun AIModelsScreen(prefs: VaultPreferencesRepository, onBack: () -> Unit) {
             topBar = {
                 TopAppBar(
                     title = { Text(stringResource(R.string.models_title)) },
-                    navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.cd_back)) } },
+                    navigationIcon = { IconButton(onClick = onBack) { Icon(LazureIcons.ArrowBack, contentDescription = stringResource(R.string.cd_back)) } },
                 )
             },
         ) { padding ->
-            Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp, vertical = 12.dp)) {
-                Text(stringResource(R.string.models_offline_notice), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(
-                    stringResource(R.string.models_catalog_hint),
-                    modifier = Modifier.padding(top = 8.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (!errorText.isNullOrBlank()) {
-                    Text(errorText.orEmpty(), modifier = Modifier.padding(top = 12.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            androidx.compose.foundation.lazy.LazyColumn(
+                Modifier.fillMaxSize().padding(padding),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp),
+            ) {
+                item { Text(stringResource(R.string.models_offline_notice), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                if (!errorText.isNullOrBlank()) item { Text(errorText.orEmpty(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+
+                item { SectionTitle(stringResource(R.string.models_sec_llm)) }
+                item {
+                    val label = activeModel?.let { ChatModelSelection.shortLocalModelLabel(it) } ?: "—"
+                    ModelCard(title = label, subtitle = stringResource(R.string.models_choose_llm), selected = activeModel != null, onClick = { showLlmSheet = true })
                 }
+
+                val sections = listOf(
+                    com.rassvet.essential.data.recording.SpeechModelCategory.Asr to R.string.models_sec_asr,
+                    com.rassvet.essential.data.recording.SpeechModelCategory.Diarization to R.string.models_sec_diar,
+                    com.rassvet.essential.data.recording.SpeechModelCategory.Denoise to R.string.models_sec_enh,
+                    com.rassvet.essential.data.recording.SpeechModelCategory.Separation to R.string.models_sec_enh,
+                )
+                var lastTitle = -1
+                sections.forEach { (cat, title) ->
+                    val rows = speechModels.filter { it.category == cat }
+                    if (title != lastTitle) item(key = "sec-$title") { SectionTitle(stringResource(title)) }
+                    lastTitle = title
+                    rows.forEach { m ->
+                        item(key = m.id) {
+                            val toggle = when (cat) {
+                                com.rassvet.essential.data.recording.SpeechModelCategory.Denoise -> Triple(denoiseOn, R.string.models_denoise_hint) { v: Boolean -> scope.launch { prefs.setSpeechDenoiseEnabled(v) }; Unit }
+                                com.rassvet.essential.data.recording.SpeechModelCategory.Separation -> Triple(separationOn, R.string.models_sep_hint) { v: Boolean -> scope.launch { prefs.setSpeechSeparationEnabled(v) }; Unit }
+                                else -> null
+                            }
+                            ModelCard(
+                                title = m.title,
+                                subtitle = "${m.version} · ${m.languages} · ${com.rassvet.essential.data.llm.LocalModelCatalog.formatDownloadSize(m.sizeBytes)} · ${m.license}",
+                                body = m.description,
+                                selected = m.installed && (toggle == null || toggle.first),
+                                status = if (m.installed) stringResource(if (toggle == null) R.string.models_in_use else R.string.models_bundled) else stringResource(R.string.models_missing),
+                                toggle = if (m.installed) toggle?.let { it.first to it.third } else null,
+                                toggleHint = toggle?.let { stringResource(it.second) },
+                            )
+                        }
+                    }
+                }
+                item { Text(stringResource(R.string.models_footnote), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
         ChatModelPickerSheet(
-            visible = true,
+            visible = showLlmSheet,
             options = options,
             selectedId = selectedId,
             deviceRamMb = ram,
             modelDownload = downloadState,
-            onDismiss = onBack,
+            onDismiss = { showLlmSheet = false },
             onSelect = { option ->
                 scope.launch { ChatModelSelection.applySelection(prefs, option) }
-                onBack()
+                showLlmSheet = false
             },
             onDownload = { option ->
                 pendingDownload = option
@@ -204,4 +243,35 @@ private suspend fun finishInstall(
     )
     ChatModelSelection.applySelection(prefs, option)
     Toast.makeText(context, R.string.chat_model_download_done, Toast.LENGTH_SHORT).show()
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(text, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
+}
+
+@Composable
+private fun ModelCard(
+    title: String, subtitle: String, selected: Boolean, body: String? = null, status: String? = null,
+    toggle: Pair<Boolean, (Boolean) -> Unit>? = null, toggleHint: String? = null, onClick: (() -> Unit)? = null,
+) {
+    androidx.compose.material3.Card(
+        modifier = Modifier.fillMaxWidth().let { if (onClick != null) it.clickable(onClick = onClick) else it },
+        colors = androidx.compose.material3.CardDefaults.cardColors(
+            containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.titleSmall)
+                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (toggle != null) androidx.compose.material3.Switch(checked = toggle.first, onCheckedChange = toggle.second)
+                else if (selected) Icon(LazureIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            }
+            if (body != null) Text(body, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+            if (toggleHint != null) Text(toggleHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+            if (status != null) Text(status, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
+        }
+    }
 }

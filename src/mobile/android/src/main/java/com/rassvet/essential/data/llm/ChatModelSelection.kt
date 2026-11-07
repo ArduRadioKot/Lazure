@@ -125,8 +125,11 @@ object ChatModelSelection {
                 com.rassvet.essential.R.string.chat_model_local_subtitle,
                 estimateRamLabel(fileName),
             ),
-            description = preset?.description,
-            sizeLabel = preset?.sizeLabel,
+            description = preset?.let {
+                if (context.resources.configuration.locales[0].language == "ru") it.description
+                else context.getString(com.rassvet.essential.R.string.model_local_description, it.label)
+            },
+            sizeLabel = preset?.expectedBytes?.let { android.text.format.Formatter.formatShortFileSize(context, it) },
             kind = Kind.LocalModel,
             localFileName = fileName,
             available = available,
