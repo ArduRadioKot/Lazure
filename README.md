@@ -18,7 +18,7 @@ Lazure локально, **без интернета**, превращает а�
 | Записывает аудио из интерфейса | Foreground-сервис, WAV 16 кГц, системный AEC | `service/RecordingService.kt` |
 | Преобразует речь в текст | GigaAM v3 CTC с пунктуацией (sherpa-onnx) | `data/recording/SpeechPipeline.kt` |
 | Определяет и разделяет говорящих | pyannote 3.0 + CAM++ и уточнение по эмбеддингам предложений | `SpeechPipeline.refineSpeakers` |
-| Временные метки реплик | Время токенов CTC, конец по следующему токену или концу речи по VAD | `SpeechPipeline.kt`, `TokenTiming` |
+| Временные метки реплик | Время токенов GigaAM CTC: начало первого и метка последнего токена + 80 мс (правило выбрано замером) | `SpeechPipeline.groupTokens`, `tools/bench/token_timing_check.py` |
 | Отображает расшифровку | Плеер с волной, подсветка текущей реплики, переход по клику | `ui/recording/` |
 | Экспортирует в файл | JSON `{"transcript":[{speaker_id,start_ms,end_ms,text}]}` | `data/recording/TranscriptExport.kt` |
 | Всё на устройстве | Облачных API нет; сеть нужна только для необязательной загрузки других LLM | — |
