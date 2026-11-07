@@ -8,6 +8,13 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+val localProps = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+val lazureAbis: List<String> =
+    (findProperty("lazure.abis") as String?)?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }
+        ?: listOf("arm64-v8a", "x86_64")
+
 android {
     namespace = "com.rassvet.essential"
     compileSdk {
@@ -26,7 +33,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
+            // Phones are arm64-v8a; x86_64 is for the emulator. A phone-only APK: -Plazure.abis=arm64-v8a
+            abiFilters += lazureAbis
         }
         externalNativeBuild {
             cmake {
@@ -34,15 +42,21 @@ android {
                 arguments += "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
             }
         }
-
-
-        buildConfigField("String", "GEMINI_API_KEY_LOCAL", "\"\"")
-        buildConfigField("String", "OPENAI_COMPAT_API_KEY_LOCAL", "\"\"")
-        buildConfigField("String", "OPENAI_COMPAT_BASE_URL_LOCAL", "\"\"")
-        buildConfigField("boolean", "ALLOW_DIRECT_CLOUD", "false")
     }
 
     ndkVersion = "27.1.12297006"
+
+    signingConfigs {
+        val storeFile = localProps.getProperty("lazure.storeFile")
+        if (storeFile != null) {
+            create("lazureRelease") {
+                this.storeFile = rootProject.file(storeFile)
+                storePassword = localProps.getProperty("lazure.storePassword")
+                keyAlias = localProps.getProperty("lazure.keyAlias")
+                keyPassword = localProps.getProperty("lazure.keyPassword")
+            }
+        }
+    }
 
     externalNativeBuild {
         cmake {
@@ -54,30 +68,11 @@ android {
     buildTypes {
         debug {
             isMinifyEnabled = false
-            val localProps = Properties()
-            val localFile = rootProject.file("local.properties")
-            if (localFile.exists()) {
-                localFile.inputStream().use { localProps.load(it) }
-            }
-            fun esc(v: String) = v.replace("\\", "\\\\").replace("\"", "\\\"")
-            buildConfigField(
-                "String",
-                "GEMINI_API_KEY_LOCAL",
-                "\"${esc(localProps.getProperty("GEMINI_API_KEY") ?: "")}\"",
-            )
-            buildConfigField(
-                "String",
-                "OPENAI_COMPAT_API_KEY_LOCAL",
-                "\"${esc(localProps.getProperty("OPENAI_COMPAT_API_KEY") ?: "")}\"",
-            )
-            buildConfigField(
-                "String",
-                "OPENAI_COMPAT_BASE_URL_LOCAL",
-                "\"${esc(localProps.getProperty("OPENAI_COMPAT_BASE_URL") ?: "")}\"",
-            )
-            buildConfigField("boolean", "ALLOW_DIRECT_CLOUD", "true")
         }
         release {
+            // Installable without a team keystore: signed with the debug key unless lazure.storeFile etc. are set in
+            // local.properties. Kotlin code runs noticeably faster than in a debuggable build (DSP, clustering).
+            signingConfig = signingConfigs.findByName("lazureRelease") ?: signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
