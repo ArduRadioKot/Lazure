@@ -73,6 +73,8 @@ class OverlapSeparator(context: Context) : AutoCloseable {
     }
 
     private fun runWindow(x: FloatArray): Array<FloatArray> {
+        // A silent window (typical when a separated source is re-split) carries nothing to separate: skip the model run.
+        if (rms(x) < 0.002f) return arrayOf(FloatArray(WINDOW), FloatArray(WINDOW))
         OnnxTensor.createTensor(env, FloatBuffer.wrap(x), longArrayOf(1, WINDOW.toLong())).use { t ->
             session.run(mapOf(session.inputNames.first() to t)).use { r ->
                 val b = (r[0] as OnnxTensor).floatBuffer

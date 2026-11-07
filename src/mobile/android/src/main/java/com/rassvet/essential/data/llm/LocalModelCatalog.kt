@@ -1,6 +1,10 @@
 package com.rassvet.essential.data.llm
 
 object LocalModelCatalog {
+    // Every URL is pinned to a Hugging Face commit from before 2026-10-11. That day litert-community re-exported the
+    // models with a chat template for LiteRT-LM 0.18 ("content parts"); our runtime is 0.12 (newer ones need Kotlin 2.4)
+    // and silently drops the user turn from such files, so the model answers "I cannot assist" / "I'm not sure what
+    // you're asking". The pre-October files have the same sizes and work with 0.12.
     data class Preset(
         val label: String,
         val url: String,
@@ -21,25 +25,11 @@ object LocalModelCatalog {
     val presets =
         listOf(
             Preset(
-                label = "Gemma 3 270M",
-                pageUrl = "https://huggingface.co/litert-community/gemma-3-270m-it",
-                url =
-                    "https://huggingface.co/litert-community/gemma-3-270m-it/" +
-                        "resolve/main/gemma3-270m-it-q8.litertlm",
-                fileName = "gemma3-270m-it-q8.litertlm",
-                ramMb = 900,
-                expectedBytes = 304_005_120L,
-                info = "290 МБ · от ~900 МБ RAM",
-                description =
-                    "Ультра-лёгкая модель Google. Мгновенные ответы на простые вопросы — " +
-                        "идеально для старых телефонов и быстрых заметок offline.",
-            ),
-            Preset(
                 label = "SmolLM2 360M",
                 pageUrl = "https://huggingface.co/litert-community/SmolLM2-360M-Instruct",
                 url =
                     "https://huggingface.co/litert-community/SmolLM2-360M-Instruct/" +
-                        "resolve/main/SmolLM2_360M_instruct.litertlm",
+                        "resolve/507c99cfe6541ba2bcd84818786f7b025935e5e1/SmolLM2_360M_instruct.litertlm",
                 fileName = "SmolLM2_360M_instruct.litertlm",
                 ramMb = 1100,
                 expectedBytes = 373_719_040L,
@@ -50,6 +40,20 @@ object LocalModelCatalog {
             ),
             Preset(
                 label = "Qwen3 0.6B",
+                pageUrl = "https://huggingface.co/litert-community/Qwen3-0.6B-int4",
+                url =
+                    "https://huggingface.co/litert-community/Qwen3-0.6B-int4/" +
+                        "resolve/6aa2daf8ab/qwen3_0.6b_nothink_q4_block32_ekv1280.litertlm",
+                fileName = "qwen3_0.6b_nothink_q4_block32_ekv1280.litertlm",
+                ramMb = 1200,
+                expectedBytes = 347_251_840L,
+                info = "331 МБ · от ~1,2 ГБ RAM",
+                description =
+                    "Qwen3 в 4-битной сборке без «рассуждений»: отвечает сразу и примерно вдвое быстрее " +
+                        "INT8-версии на CPU, занимает вдвое меньше места. Контекст 1280 токенов.",
+            ),
+            Preset(
+                label = "Qwen3 0.6B INT8",
                 pageUrl = "https://huggingface.co/litert-community/Qwen3-0.6B",
                 url =
                     "https://huggingface.co/litert-community/Qwen3-0.6B/" +
@@ -67,7 +71,7 @@ object LocalModelCatalog {
                 pageUrl = "https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct",
                 url =
                     "https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/" +
-                        "resolve/main/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
+                        "resolve/19edb84c69a0212f29a6ef17ba0d6f278b6a1614/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
                 fileName = "Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
                 ramMb = 2200,
                 expectedBytes = 1_597_931_520L,
@@ -81,7 +85,7 @@ object LocalModelCatalog {
                 pageUrl = "https://huggingface.co/litert-community/DeepSeek-R1-Distill-Qwen-1.5B",
                 url =
                     "https://huggingface.co/litert-community/DeepSeek-R1-Distill-Qwen-1.5B/" +
-                        "resolve/main/DeepSeek-R1-Distill-Qwen-1.5B_multi-prefill-seq_q8_ekv4096.litertlm",
+                        "resolve/2f8b8ee90d8f93b15305b699e8772b277d074a9a/DeepSeek-R1-Distill-Qwen-1.5B_multi-prefill-seq_q8_ekv4096.litertlm",
                 fileName = "DeepSeek-R1-Distill-Qwen-1.5B_multi-prefill-seq_q8_ekv4096.litertlm",
                 ramMb = 3000,
                 expectedBytes = 1_833_451_520L,
@@ -95,7 +99,7 @@ object LocalModelCatalog {
                 pageUrl = "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm",
                 url =
                     "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/" +
-                        "resolve/main/gemma-4-E2B-it.litertlm",
+                        "resolve/b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1/gemma-4-E2B-it.litertlm",
                 fileName = "gemma-4-E2B-it.litertlm",
                 ramMb = 5200,
                 expectedBytes = 2_588_147_712L,
@@ -109,7 +113,7 @@ object LocalModelCatalog {
                 pageUrl = "https://huggingface.co/litert-community/Phi-4-mini-instruct",
                 url =
                     "https://huggingface.co/litert-community/Phi-4-mini-instruct/" +
-                        "resolve/main/Phi-4-mini-instruct_multi-prefill-seq_q8_ekv4096.litertlm",
+                        "resolve/8cd368be75fdb94d5a6f6f5b40f1ab22a6c2543e/Phi-4-mini-instruct_multi-prefill-seq_q8_ekv4096.litertlm",
                 fileName = "Phi-4-mini-instruct_multi-prefill-seq_q8_ekv4096.litertlm",
                 ramMb = 7500,
                 expectedBytes = 3_910_090_752L,
@@ -123,7 +127,7 @@ object LocalModelCatalog {
                 pageUrl = "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm",
                 url =
                     "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/" +
-                        "resolve/main/gemma-4-E4B-it.litertlm",
+                        "resolve/2eee7ac325f20eb8c9ac1d0e972f7c84663062da/gemma-4-E4B-it.litertlm",
                 fileName = "gemma-4-E4B-it.litertlm",
                 ramMb = 6800,
                 expectedBytes = 3_659_530_240L,
@@ -137,7 +141,7 @@ object LocalModelCatalog {
                 pageUrl = "https://huggingface.co/litert-community/Qwen3-4B",
                 url =
                     "https://huggingface.co/litert-community/Qwen3-4B/" +
-                        "resolve/main/qwen3_4b_channelwise_int8_float32kv.litertlm",
+                        "resolve/84cc5a35c9c65cd18fcd65bb1f3a7d77a4acfe6e/qwen3_4b_channelwise_int8_float32kv.litertlm",
                 fileName = "qwen3_4b_channelwise_int8_float32kv.litertlm",
                 ramMb = 9000,
                 expectedBytes = 5_672_370_176L,

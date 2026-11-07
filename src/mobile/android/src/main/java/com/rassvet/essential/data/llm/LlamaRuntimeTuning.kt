@@ -53,9 +53,12 @@ object LlamaRuntimeTuning {
                     }
             }
 
+        // The KV-cache length is baked into the file name (…_ekv1280.litertlm); asking for more makes the engine fail.
+        val ekv = Regex("ekv(\\d+)").find(id)?.groupValues?.get(1)?.toIntOrNull()
+        val ctx = maxOf(minOf(contextSize, ctxCap), 1024).let { if (ekv != null) minOf(it, ekv) else it }
         return copy(
             nThreads = threads,
-            contextSize = maxOf(minOf(contextSize, ctxCap), 1024),
+            contextSize = ctx,
             maxTokens = maxOf(minOf(maxTokens, maxTokCap), 256),
         )
     }

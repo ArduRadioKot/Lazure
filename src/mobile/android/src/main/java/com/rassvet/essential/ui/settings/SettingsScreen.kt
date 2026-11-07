@@ -101,6 +101,7 @@ fun SettingsScreen(
     val streamReplies by prefs.streamReplies.collectAsState(initial = true)
     val thinkingEnabled by prefs.thinkingEnabled.collectAsState(initial = false)
     val autoScroll by prefs.autoScrollTranscript.collectAsState(initial = true)
+    val speakerHint by prefs.speakerCountHint.collectAsState(initial = 0)
     val chatHaptics by prefs.chatHapticsEnabled.collectAsState(initial = true)
     val llmComputeBackend by prefs.llmComputeBackend.collectAsState(initial = LlmComputeBackend.CPU)
     val localWebResearch by prefs.localWebResearchEnabled.collectAsState(initial = true)
@@ -384,6 +385,13 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.settings_autoscroll_hint),
                     checked = autoScroll,
                     onCheckedChange = { setBool(VaultPreferencesKeys.autoScrollTranscript, it) },
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                ReaderSettingRow(
+                    icon = { Icon(LazureIcons.Mic, null, Modifier.size(20.dp)) },
+                    title = stringResource(R.string.settings_speaker_count),
+                    value = if (speakerHint == 0) stringResource(R.string.settings_speaker_count_auto) else speakerHint.toString(),
+                    onClick = { scope.launch { prefs.setSpeakerCountHint(if (speakerHint >= 6) 0 else if (speakerHint == 0) 2 else speakerHint + 1) } },
                 )
             }
 

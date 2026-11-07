@@ -209,7 +209,7 @@
     <string name="chat_history_title">Chats</string>
     <string name="chat_history_new">New</string>
     <string name="chat_history_empty">History is empty - start a new chat.</string>
-    <string name="chat_history_save_note">Save chat as note</string>
+    <string name="chat_history_save_note">Copy chat</string>
     <string name="chat_history_delete">Delete chat</string>
     <string name="time_just_now">just now</string>
     <string name="time_minutes_ago">%1$d min ago</string>
@@ -543,6 +543,11 @@
     <string name="settings_section_recordings">Recordings</string>
     <string name="settings_autoscroll">Follow playback</string>
     <string name="settings_autoscroll_hint">Scroll the transcript to the quote being spoken</string>
+    <string name="toast_chat_copied">Chat copied</string>
+    <string name="speaker_merge_into">Merge into:</string>
+    <string name="settings_speaker_count">Number of speakers</string>
+    <string name="settings_speaker_count_hint">If too many people are detected, say how many there really are</string>
+    <string name="settings_speaker_count_auto">Auto</string>
 </resources>
 
 

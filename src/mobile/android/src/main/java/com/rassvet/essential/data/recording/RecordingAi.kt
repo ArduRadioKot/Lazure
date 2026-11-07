@@ -36,7 +36,9 @@ object RecordingAi {
         require(segments.isNotEmpty()) { "Transcript is empty" }
         val names = nameMap(speakers)
         val lines = segments.map { line(it, names) }
-        var chunks = pack(lines, 3000)
+        // Small-context builds (…_ekv1280, ~1300 tokens in total) need short chunks; Russian is ~2.3 chars per token.
+        val small = modelId.contains("ekv1280", ignoreCase = true)
+        var chunks = pack(lines, if (small) 1500 else 3000)
         var level = 0
         while (chunks.size > 1) {
             val notes = ArrayList<String>()
@@ -47,15 +49,15 @@ object RecordingAi {
                     user = "Фрагмент разговора:\n$c\n\nСделай конспект.", modelId = modelId,
                 ).trim()
             }
-            chunks = pack(notes, 3500)
+            chunks = pack(notes, if (small) 1500 else 3500)
             if (++level > 4) break
         }
         onProgress("final")
         return chat.completeLocalIsolated(
             system = "Ты помощник, который готовит итоги разговора. $NO_INVENT Отвечай на языке расшифровки в Markdown.",
-            user = "Материал:\n${chunks.joinToString("\n\n")}\n\nСоставь итог с разделами: " +
-                "## Краткое содержание, ## Основные темы, ## Ключевые мысли, ## Принятые решения, " +
-                "## Задачи (укажи ответственного, только если он назван), ## Открытые вопросы. " +
+            user = "Материал:\n${chunks.joinToString("\n\n")}\n\nСоставь короткий итог ровно с четырьмя разделами: " +
+                "## Краткое содержание, ## Решения, ## Задачи, ## Открытые вопросы. " +
+                "В кратком содержании 2–3 предложения. В задачах указывай ответственного, только если он назван. " +
                 "Если в разделе нечего написать, пиши «—».",
             modelId = modelId,
         ).trim()

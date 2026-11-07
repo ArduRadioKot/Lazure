@@ -51,6 +51,7 @@ object RecordingProcessor {
             val options = PipelineOptions(
                 denoise = prefs.speechDenoiseEnabled.first(),
                 separate = prefs.speechSeparationEnabled.first(),
+                numSpeakers = prefs.speakerCountHint.first().takeIf { it > 0 } ?: -1,
             )
             val segments = pipeline.run(rec.audioPath, options = options, onProgress = { stage, f ->
                 val (a, b) = weights[stage] ?: (0 to 0)

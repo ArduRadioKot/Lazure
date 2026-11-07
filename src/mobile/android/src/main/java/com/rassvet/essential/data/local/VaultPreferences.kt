@@ -58,6 +58,7 @@ object VaultPreferencesKeys {
     val llmNThreads = intPreferencesKey("llm_n_threads")
 
     val llmComputeBackend = stringPreferencesKey("llm_compute_backend")
+    val llmBackendCpuDefaultApplied = booleanPreferencesKey("llm_backend_cpu_default_v1")
 
     val localWebResearchEnabled = booleanPreferencesKey("local_web_research_enabled")
 
@@ -72,6 +73,7 @@ object VaultPreferencesKeys {
     val speechDenoiseEnabled = booleanPreferencesKey("speech_denoise_enabled")
     val speechSeparationEnabled = booleanPreferencesKey("speech_separation_enabled")
     val autoScrollTranscript = booleanPreferencesKey("auto_scroll_transcript")
+    val speakerCountHint = intPreferencesKey("speaker_count_hint")
     val chatHapticsEnabled = booleanPreferencesKey("chat_haptics_enabled")
     val typewriterEffect = booleanPreferencesKey("typewriter_effect")
 
@@ -179,10 +181,15 @@ class VaultPreferencesRepository(
         context.dataStore.data.map { it[VaultPreferencesKeys.speechSeparationEnabled] ?: true }
 
     /** Follow the playhead: scroll the transcript to the quote being spoken. */
+    /** 0 = detect automatically; otherwise the number of people the user says are in their recordings. */
+    val speakerCountHint: Flow<Int> =
+        context.dataStore.data.map { it[VaultPreferencesKeys.speakerCountHint] ?: 0 }
+
     val autoScrollTranscript: Flow<Boolean> =
         context.dataStore.data.map { it[VaultPreferencesKeys.autoScrollTranscript] ?: true }
 
     suspend fun setSpeechDenoiseEnabled(v: Boolean) { context.dataStore.edit { it[VaultPreferencesKeys.speechDenoiseEnabled] = v } }
+    suspend fun setSpeakerCountHint(v: Int) { context.dataStore.edit { it[VaultPreferencesKeys.speakerCountHint] = v.coerceIn(0, 8) } }
     suspend fun setSpeechSeparationEnabled(v: Boolean) { context.dataStore.edit { it[VaultPreferencesKeys.speechSeparationEnabled] = v } }
 
     val chatHapticsEnabled: Flow<Boolean> =
@@ -214,6 +221,16 @@ class VaultPreferencesRepository(
 
     val localWebResearchEndpoint: Flow<String> =
         context.dataStore.data.map { it[VaultPreferencesKeys.localWebResearchEndpoint].orEmpty() }
+
+    /** One-time switch to CPU for installs that were auto-set to GPU before CPU became the default. */
+    suspend fun applyCpuDefaultOnce() {
+        context.dataStore.edit { prefs ->
+            if (prefs[VaultPreferencesKeys.llmBackendCpuDefaultApplied] != true) {
+                prefs[VaultPreferencesKeys.llmComputeBackend] = LlmComputeBackend.CPU
+                prefs[VaultPreferencesKeys.llmBackendCpuDefaultApplied] = true
+            }
+        }
+    }
 
     suspend fun hasLlmComputeBackend(): Boolean =
         context.dataStore.data.first().contains(VaultPreferencesKeys.llmComputeBackend)

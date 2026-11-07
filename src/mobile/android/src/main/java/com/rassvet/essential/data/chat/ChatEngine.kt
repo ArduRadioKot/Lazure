@@ -145,15 +145,17 @@ class ChatEngine(
         }
     }
 
-    private fun buildLocalSystemOverlay(noteContext: PendingNoteContext?): String =
+    /**
+     * Kept deliberately short. A 0.6B model recites whatever the system prompt contains (it answered "Hello" with the
+     * date and "Справка из интернета: [Пожалуйста, что-то есть]"), so the date line is added only when the question is
+     * about the date or time, and web-research wording lives in the engine and only when there is web context.
+     */
+    private fun buildLocalSystemOverlay(noteContext: PendingNoteContext?, userText: String): String =
         buildString {
-            appendLine(
-                "Ты — ассистент Lazure. Отвечай кратко. " +
-                    "Если ниже есть блок «Справка из интернета» — опирайся на него и не говори, " +
-                    "что у тебя нет доступа к интернету или актуальным данным. " +
-                    "Используй обычный Markdown для оформления ответа.",
-            )
-            appendLine(ChatDeviceClock.systemDateTimeLine())
+            appendLine("Ты — Lazure, помощник для разговоров и заметок. Отвечай коротко, по делу и на языке пользователя.")
+            if (Regex("""(?iu)сегодня|дата|число|время|час\b|день недели|какой день|today|date|time|what day""").containsMatchIn(userText)) {
+                appendLine(ChatDeviceClock.systemDateTimeLine())
+            }
             if (noteContext != null) {
                 appendLine()
                 appendLine("Контекст заметки «${noteContext.title.ifBlank { "Без названия" }}»:")
@@ -410,7 +412,7 @@ class ChatEngine(
                 vaultContext = vaultContext,
                 webContext = webContext,
                 modelId = modelId,
-                systemOverlay = buildLocalSystemOverlay(request.noteContext),
+                systemOverlay = buildLocalSystemOverlay(request.noteContext, request.userVisibleText),
                 chatSessionKey = request.chatSessionKey,
                 history = request.history.map { it.isUser to it.text },
             )

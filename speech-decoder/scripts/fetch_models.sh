@@ -17,7 +17,9 @@ mkdir -p "$APP/assets/models/denoise"
 for n in 1 2; do curl -L -o "$APP/assets/models/denoise/dtln_$n.onnx" https://huggingface.co/niobures/DTLN/resolve/main/models/DTLN/onnx/model_$n.onnx; done
 # Bundled LLM (Qwen3 0.6B, 614 MB) copied to the model dir on first launch
 mkdir -p "$APP/assets/bundled_llm"
-curl -L -o "$APP/assets/bundled_llm/Qwen3-0.6B.litertlm" https://huggingface.co/litert-community/Qwen3-0.6B/resolve/main/Qwen3-0.6B.litertlm
+# Pinned: litert-community re-exported its models on 2026-10-11 for LiteRT-LM 0.18 (chat-template "content parts"); the
+# 0.12 runtime used by the app drops the user turn from those files. This is the June INT4 no-think build (347 MB).
+curl -L -o "$APP/assets/bundled_llm/qwen3_0.6b_nothink_q4_block32_ekv1280.litertlm" https://huggingface.co/litert-community/Qwen3-0.6B-int4/resolve/6aa2daf8ab/qwen3_0.6b_nothink_q4_block32_ekv1280.litertlm
 # Separation model is produced locally (needs python + torch): see scripts/export_mossformer2.py, then place
 #   mossformer2_ss_16k_int8.onnx in $APP/assets/models/separation/
 mkdir -p "$APP/assets/models/separation"

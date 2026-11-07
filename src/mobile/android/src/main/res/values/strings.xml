@@ -209,7 +209,7 @@
     <string name="chat_history_title">Чаты</string>
     <string name="chat_history_new">Новый</string>
     <string name="chat_history_empty">История пуста — начните новый чат.</string>
-    <string name="chat_history_save_note">Сохранить чат как заметку</string>
+    <string name="chat_history_save_note">Скопировать чат</string>
     <string name="chat_history_delete">Удалить чат</string>
     <string name="time_just_now">только что</string>
     <string name="time_minutes_ago">%1$d мин назад</string>
@@ -543,6 +543,7 @@
     <string name="settings_section_recordings">Recordings</string>
     <string name="settings_autoscroll">Follow playback</string>
     <string name="settings_autoscroll_hint">Scroll the transcript to the quote being spoken</string>
+    <string name="toast_chat_copied">Чат скопирован</string>
 </resources>
 
 

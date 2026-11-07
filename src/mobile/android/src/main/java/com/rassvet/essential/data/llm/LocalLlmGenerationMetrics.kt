@@ -78,8 +78,11 @@ object LocalLlmGenerationMetrics {
         updateGenerating(count)
     }
 
+    private var firstTokenNanos = 0L
+
     private fun updateGenerating(totalTokens: Int) {
         val total = max(1, totalTokens)
+        if (firstTokenNanos == 0L) firstTokenNanos = System.nanoTime()
         val prev = _snapshot.value
         val elapsedSec = (System.nanoTime() - startNanos) / 1_000_000_000.0
         val tps =
@@ -110,6 +113,13 @@ object LocalLlmGenerationMetrics {
     }
 
     fun onStreamEnd() {
+        val gen = _snapshot.value.generatedTokens
+        if (gen > 0 && firstTokenNanos != 0L) {
+            val end = System.nanoTime()
+            val decode = (end - firstTokenNanos) / 1e9
+            LocalLlmLog.i("speed: tokens=$gen firstToken=${"%.1f".format((firstTokenNanos - startNanos) / 1e9)}s decode=${"%.1f".format(decode)}s => ${"%.2f".format(if (decode > 0) gen / decode else 0.0)} tok/s total=${"%.1f".format((end - startNanos) / 1e9)}s")
+        }
+        firstTokenNanos = 0L
         _snapshot.value = Snapshot(phase = Phase.Idle, tokensPerSec = null, generatedTokens = 0)
     }
 

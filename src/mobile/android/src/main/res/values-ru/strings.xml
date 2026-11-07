@@ -264,7 +264,7 @@
     <string name="chat_history_title">Чаты</string>
     <string name="chat_history_new">Новый</string>
     <string name="chat_history_empty">История пуста — начните новый чат.</string>
-    <string name="chat_history_save_note">Сохранить чат как заметку</string>
+    <string name="chat_history_save_note">Скопировать чат</string>
     <string name="chat_history_delete">Удалить чат</string>
     <string name="chat_share">Поделиться</string>
     <string name="cd_share">Поделиться</string>
@@ -536,6 +536,7 @@
     <string name="settings_section_recordings">Записи</string>
     <string name="settings_autoscroll">Автопрокрутка за воспроизведением</string>
     <string name="settings_autoscroll_hint">Прокручивать расшифровку к реплике, которая сейчас звучит</string>
+    <string name="toast_chat_copied">Чат скопирован</string>
 </resources>
 
 

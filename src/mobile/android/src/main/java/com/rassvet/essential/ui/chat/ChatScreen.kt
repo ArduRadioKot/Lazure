@@ -61,6 +61,14 @@ import com.rassvet.essential.data.local.AppDatabase
 import com.rassvet.essential.data.local.VaultPreferencesRepository
 import com.rassvet.essential.ui.editor.MarkdownContent
 import com.rassvet.essential.ui.home.ChatModelPickerPill
+import com.rassvet.essential.ui.home.ChatHistorySheet
+import com.rassvet.essential.ui.home.ChatSessionUi
+import com.rassvet.essential.data.local.ChatMessageEntity
+import com.rassvet.essential.data.local.ChatSessionEntity
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateListOf
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -97,6 +105,44 @@ fun ChatScreen(
     var isThinking by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
+    // ---- chat history (Room: chat_sessions / chat_messages) ----
+    val sessionDao = remember(db) { db.chatSessionDao() }
+    val messageDao = remember(db) { db.chatMessageDao() }
+    var sessionId by remember { mutableLongStateOf(0L) }
+    var historyOpen by remember { mutableStateOf(false) }
+    val sessions = remember { mutableStateListOf<ChatSessionUi>() }
+    fun reloadSessions() {
+        scope.launch(Dispatchers.IO) {
+            val list = sessionDao.all().map { ChatSessionUi(id = it.id, title = it.title, lastUpdatedAt = it.lastUpdatedAt) }
+            withContext(Dispatchers.Main) { sessions.clear(); sessions.addAll(list) }
+        }
+    }
+    LaunchedEffect(db) { reloadSessions() }
+    /** The attached conversation travels with the user's message (sources_json is unused for user messages). */
+    fun attachmentMarker(rec: com.rassvet.essential.data.local.RecordingEntity?) = if (rec == null) "[]" else "{\"recordingId\":\"${rec.id}\"}"
+    suspend fun persist(isUser: Boolean, text: String, rec: com.rassvet.essential.data.local.RecordingEntity?) = withContext(Dispatchers.IO) {
+        var id = sessionId
+        if (id == 0L) {
+            id = sessionDao.insert(ChatSessionEntity(title = text.take(40).ifBlank { context.getString(R.string.chat_title_new) }, lastUpdatedAt = System.currentTimeMillis()))
+            sessionId = id
+        }
+        messageDao.insert(ChatMessageEntity(sessionId = id, isUser = isUser, text = text, attachmentsJson = "[]",
+            sourcesJson = if (isUser) attachmentMarker(rec) else "[]", createdAt = System.currentTimeMillis()))
+        sessionDao.touch(id, sessionDao.all().firstOrNull { it.id == id }?.title ?: text.take(40), System.currentTimeMillis())
+        reloadSessions()
+    }
+    fun startNewChat() { messages.clear(); sessionId = 0L; attached = null; input = "" }
+    fun loadSession(id: Long) {
+        scope.launch {
+            val stored = withContext(Dispatchers.IO) { messageDao.forSession(id) }
+            messages.clear()
+            stored.forEach { messages.add((if (it.isUser) "user" else "assistant") to it.text) }
+            sessionId = id
+            val recId = stored.lastOrNull { it.isUser }?.sourcesJson?.let { Regex("\"recordingId\":\"([^\"]+)\"").find(it)?.groupValues?.get(1) }
+            attached = recId?.let { r -> allRecordings.firstOrNull { it.id == r } }
+        }
+    }
+
     LaunchedEffect(prefs) {
         kotlinx.coroutines.coroutineScope {
             launch { prefs.apiBaseUrl.collect { apiBase = it } }
@@ -111,6 +157,7 @@ fun ChatScreen(
         messages.add("user" to userText)
         isThinking = true
         scope.launch {
+            runCatching { persist(true, userText, attached) }
             val assistantIdx = messages.size
             messages.add("assistant" to "")
             val history = messages.take(assistantIdx - 1).map { (role, content) -> ChatEngine.HistoryLine(role == "user", content) }
@@ -122,13 +169,14 @@ fun ChatScreen(
                     // Conversation as context: retrieve the most relevant transcript lines for this question.
                     val segs = recRepo.segmentsOnce(rec.id)
                     val names = com.rassvet.essential.data.recording.RecordingAi.nameMap(recRepo.speakersOnce(rec.id))
-                    val hits = com.rassvet.essential.data.recording.RecordingAi.retrieve(userText, segs, 8)
+                    val hits = com.rassvet.essential.data.recording.RecordingAi.retrieve(userText, segs, if (activeGguf.orEmpty().contains("ekv1280", ignoreCase = true)) 4 else 6)
                     val ctx = hits.joinToString("\n") { com.rassvet.essential.data.recording.RecordingAi.line(it, names) }
-                    val system = "Answer the user's question about the conversation \"${rec.title}\" in 1-3 short sentences, " +
-                        "in the language of the question. Use only the excerpts below; if the answer is not there, say so. " +
-                        "Do not repeat the excerpts.\n\nExcerpts:\n$ctx"
+                    val system = "You answer questions about the recorded conversation \"${rec.title}\". " +
+                        "Answer in the language of the question, in 1-3 short sentences, in your own words. " +
+                        "Use only the excerpts the user gives you; if the answer is not there, say so."
+                    val grounded = "Excerpts:\n$ctx\n\nQuestion: $userText"
                     val answer = chatEngine.completeLocalIsolated(
-                        system = system, user = userText, history = history, modelId = activeGguf.orEmpty(),
+                        system = system, user = grounded, history = history, modelId = activeGguf.orEmpty(),
                     ) { chunk ->
                         output.append(chunk)
                         val now = android.os.SystemClock.uptimeMillis()
@@ -167,7 +215,9 @@ fun ChatScreen(
             }.getOrElse { EssentialApiErrors.chatMessage(context, it) }
             isThinking = false
             haptics.onGenerationComplete()
-            messages[assistantIdx] = "assistant" to reply.ifBlank { context.getString(R.string.chat_error_no_response) }
+            val finalText = reply.ifBlank { context.getString(R.string.chat_error_no_response) }
+            messages[assistantIdx] = "assistant" to finalText
+            runCatching { persist(false, finalText, null) }
         }
     }
 
@@ -193,6 +243,7 @@ fun ChatScreen(
         )
     }
 
+    Box(Modifier.fillMaxSize()) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -200,6 +251,8 @@ fun ChatScreen(
                 modelName = activeGguf?.let(ChatModelSelection::shortLocalModelLabel),
                 onBack = onBack,
                 onModels = onModels,
+                onHistory = { reloadSessions(); historyOpen = true },
+                onNewChat = { if (!isThinking) startNewChat() },
             )
         },
         bottomBar = {
@@ -298,17 +351,44 @@ fun ChatScreen(
             }
         }
     }
-
+    ChatHistorySheet(
+        visible = historyOpen,
+        sessions = sessions,
+        currentSessionId = sessionId,
+        onDismiss = { historyOpen = false },
+        onNewChat = { historyOpen = false; if (!isThinking) startNewChat() },
+        onSelectSession = { id -> historyOpen = false; if (!isThinking) loadSession(id) },
+        onSaveAsNote = { s ->
+            scope.launch {
+                val msgs = withContext(Dispatchers.IO) { messageDao.forSession(s.id) }
+                val text = msgs.joinToString("\n\n") { (if (it.isUser) "— " else "") + it.text }
+                (context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager)
+                    .setPrimaryClip(android.content.ClipData.newPlainText(s.title, text))
+                Toast.makeText(context, R.string.toast_chat_copied, Toast.LENGTH_SHORT).show()
+            }
+        },
+        onDeleteSession = { s ->
+            scope.launch(Dispatchers.IO) {
+                sessionDao.deleteMessagesFor(s.id); sessionDao.deleteById(s.id)
+                withContext(Dispatchers.Main) { if (sessionId == s.id) startNewChat(); reloadSessions() }
+            }
+        },
+    )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun ChatHeader(modelName: String?, onBack: () -> Unit, onModels: () -> Unit) {
+internal fun ChatHeader(modelName: String?, onBack: () -> Unit, onModels: () -> Unit, onHistory: () -> Unit = {}, onNewChat: () -> Unit = {}) {
     Column {
         TopAppBar(
             title = { Text(stringResource(R.string.chat_title), style = MaterialTheme.typography.titleLarge) },
             navigationIcon = { IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) { Icon(LazureIcons.ArrowBack, contentDescription = stringResource(R.string.cd_back)) } },
-            actions = { IconButton(onClick = onModels, modifier = Modifier.size(48.dp)) { Icon(LazureIcons.Memory, contentDescription = stringResource(R.string.chat_models_chip)) } },
+            actions = {
+                IconButton(onClick = onNewChat, modifier = Modifier.size(48.dp)) { Icon(LazureIcons.Edit, contentDescription = stringResource(R.string.chat_history_new)) }
+                IconButton(onClick = onHistory, modifier = Modifier.size(48.dp)) { Icon(LazureIcons.ChatBubbleOutline, contentDescription = stringResource(R.string.chat_history_title)) }
+                IconButton(onClick = onModels, modifier = Modifier.size(48.dp)) { Icon(LazureIcons.Memory, contentDescription = stringResource(R.string.chat_models_chip)) }
+            },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
         )
         ChatModelPickerPill(

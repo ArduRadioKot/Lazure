@@ -118,4 +118,8 @@
     <string name="chat_sources_prefix">Источники:</string>
     <string name="rec_interruption">Перебивание</string>
     <string name="rec_simultaneous">Говорят одновременно</string>
+    <string name="speaker_merge_into">Объединить с:</string>
+    <string name="settings_speaker_count">Число говорящих</string>
+    <string name="settings_speaker_count_hint">Если приложение находит лишних людей, укажите сколько их на самом деле</string>
+    <string name="settings_speaker_count_auto">Авто</string>
 </resources>

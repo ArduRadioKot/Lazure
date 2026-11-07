@@ -22,10 +22,12 @@ class SpeechPipelineDeviceTest {
         assertTrue(pipeline.modelsAvailable())
         for (f in files.sortedBy { it.name }) {
             val t0 = System.nanoTime()
-            for ((label, opt) in listOf("pyannote-only" to PipelineOptions(separate = false, refineSpeakers = false), "refined" to PipelineOptions(separate = false))) {
+            for ((label, opt) in listOf("default" to PipelineOptions())) {
                 val t1 = System.nanoTime()
                 val segs = pipeline.run(f.absolutePath, { _, _ -> }, options = opt)
                 val sec = (System.nanoTime() - t1) / 1e9
+                val dur = segs.groupBy { it.speaker }.mapValues { (_, v) -> v.sumOf { it.endMs - it.startMs } / 1000.0 }
+                Log.i("SPEECH_EVAL", "${f.name} [$label]: speakers=${dur.size} " + dur.entries.sortedByDescending { it.value }.joinToString { "s${it.key}=${"%.1f".format(it.value)}s" })
                 Log.i("SPEECH_EVAL", "${f.name} [$label]: ${"%.1f".format(sec)}s, ${segs.size} seg, spk=${segs.map { it.speaker }.distinct().size}: " + segs.joinToString(" | ") { "s${it.speaker} ${it.startMs}-${it.endMs} ${it.text}" })
             }
         }
@@ -57,7 +59,7 @@ class SpeechPipelineDeviceTest {
         assumeTrue(src.exists())
         val db = com.rassvet.essential.data.local.AppDatabase.build(ctx)
         val repo = RecordingRepository(ctx, db)
-        val rec = repo.registerRecordedAudio(src.copyTo(File(ctx.filesDir, "recordings/demo-${System.currentTimeMillis()}.wav"), true), "Demo call")
+        val rec = repo.registerRecordedAudio(src.copyTo(File(ctx.filesDir, "recordings/demo-${System.currentTimeMillis()}.wav"), true), "Совещание, 3 голоса")
         val deadline = System.currentTimeMillis() + 180_000
         while (System.currentTimeMillis() < deadline && db.recordingDao().get(rec.id)?.processingStatus.let { it == "queued" || it == "processing" }) kotlinx.coroutines.delay(500)
         Log.i("SPEECH_EVAL", "demo status=${db.recordingDao().get(rec.id)?.processingStatus} segs=${db.recordingDao().segments(rec.id).size}")

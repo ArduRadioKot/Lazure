@@ -28,15 +28,9 @@ class EssentialApplication : Application() {
                     initial
                 }
             AppLocales.apply(tag)
-            if (!prefs.hasLlmComputeBackend()) {
-                val backend =
-                    if (LiteRtLmCapabilities.isGpuAvailable()) {
-                        LlmComputeBackend.GPU
-                    } else {
-                        LlmComputeBackend.CPU
-                    }
-                prefs.setLlmComputeBackend(backend)
-            }
+            // CPU is the default: the GPU path is unreliable across devices (it fails to load on some and has no
+            // fallback at generation time) and a 0.6B model decodes fast enough on CPU. GPU stays a manual opt-in.
+            prefs.applyCpuDefaultOnce()
         }
     }
 }

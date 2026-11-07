@@ -45,6 +45,13 @@ class RecordingRepository(private val context: Context, private val db: AppDatab
         require(name.isNotEmpty() && name.length <= 80) { "Speaker name must contain 1–80 characters" }
         check(db.speakerDao().rename(recordingId, rawSpeakerId, name) == 1) { "Speaker no longer exists" }
     }
+    /** The user says two detected speakers are one person: move all of [from]'s lines to [into] and drop [from]. */
+    suspend fun mergeSpeakers(recordingId: String, from: String, into: String) = withContext(Dispatchers.IO) {
+        require(from != into) { "Pick a different speaker" }
+        db.recordingDao().reassignSpeaker(recordingId, from, into)
+        db.speakerDao().deleteSpeaker(recordingId, from)
+    }
+
     suspend fun rename(id: String, newTitle: String) = withContext(Dispatchers.IO) {
         val title = newTitle.trim()
         require(title.isNotEmpty() && title.length <= 120) { "Title must contain 1–120 characters" }

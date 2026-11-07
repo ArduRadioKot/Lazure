@@ -103,7 +103,6 @@ fun speakerColor(index: Int): Color {
 fun PlayerBar(player: RecordingPlayerState, audioPath: String, segments: List<TranscriptSegmentEntity>, speakers: List<SpeakerEntity>) {
     var peaks by remember(audioPath) { mutableStateOf<FloatArray?>(null) }
     LaunchedEffect(audioPath) { peaks = runCatching { WaveformPeaks.load(audioPath) }.getOrNull() }
-    LaunchedEffect(player.playing) { while (player.playing) { player.refresh(); delay(100) } ; player.refresh() }
 
     val progress = if (player.durationMs > 0) player.positionMs.toFloat() / player.durationMs else 0f
     val played = MaterialTheme.colorScheme.primary

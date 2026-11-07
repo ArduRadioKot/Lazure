@@ -53,7 +53,10 @@ class HybridLocalLlmEngine(
                 return@flow
             }
 
-            val params = LlamaRuntimeTuning.tune(prefs.getLlmRuntimeParams(), modelId, ramMb)
+            val tuned = LlamaRuntimeTuning.tune(prefs.getLlmRuntimeParams(), modelId, ramMb)
+            // Summaries and transcript Q&A are factual tasks: a cold sampler keeps a small model on the text
+            // instead of improvising (temperature 0.6 made 0.6B models echo or invent).
+            val params = if (request.hideThinking) tuned.copy(temperature = 0.2f, topP = 0.8f, topK = 20) else tuned
             val computeBackend = prefs.resolveLlmComputeBackend()
             val systemInstruction =
                 buildSystemInstruction(
@@ -71,7 +74,7 @@ class HybridLocalLlmEngine(
                     ramMb = ramMb,
                 ).let { text ->
                     // Qwen3 soft switch as a second line of defence: some revisions ignore the enable_thinking flag.
-                    if (!thinking && modelId.contains("qwen3", ignoreCase = true)) "$text /no_think" else text
+                    if (!thinking && modelId.contains("qwen3", ignoreCase = true) && !modelId.contains("nothink", ignoreCase = true)) "$text /no_think" else text
                 }
             val thinkFilter = ThinkFilter(hide = request.hideThinking || !thinking)
             val history =

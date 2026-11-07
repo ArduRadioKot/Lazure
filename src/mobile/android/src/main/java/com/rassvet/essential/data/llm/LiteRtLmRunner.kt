@@ -226,7 +226,7 @@ internal object LiteRtLmRunner {
                     Engine(
                         EngineConfig(
                             modelPath = modelPath,
-                            backend = LlmComputeBackend.toBackend(computeBackend),
+                            backend = LlmComputeBackend.toBackend(computeBackend, params.nThreads.coerceIn(2, 4)),
 
                             maxNumTokens = params.contextSize,
                             cacheDir = context.cacheDir.absolutePath,

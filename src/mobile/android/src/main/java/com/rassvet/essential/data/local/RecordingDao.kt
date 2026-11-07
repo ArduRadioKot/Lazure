@@ -47,6 +47,9 @@ interface RecordingDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSegments(segments: List<TranscriptSegmentEntity>)
 
+    @Query("UPDATE transcript_segments SET speaker_id = :to WHERE recording_id = :recordingId AND speaker_id = :from")
+    suspend fun reassignSpeaker(recordingId: String, from: String, to: String): Int
+
     @Query("DELETE FROM transcript_segments WHERE recording_id = :recordingId")
     suspend fun deleteSegments(recordingId: String)
 }
@@ -64,6 +67,9 @@ interface SpeakerDao {
 
     @Query("UPDATE speakers SET display_name = :displayName WHERE recording_id = :recordingId AND raw_speaker_id = :rawSpeakerId")
     suspend fun rename(recordingId: String, rawSpeakerId: String, displayName: String): Int
+
+    @Query("DELETE FROM speakers WHERE recording_id = :recordingId AND raw_speaker_id = :rawSpeakerId")
+    suspend fun deleteSpeaker(recordingId: String, rawSpeakerId: String): Int
 
     @Query("DELETE FROM speakers WHERE recording_id = :recordingId")
     suspend fun deleteForRecording(recordingId: String)

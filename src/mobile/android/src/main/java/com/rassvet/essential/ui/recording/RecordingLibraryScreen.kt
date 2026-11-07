@@ -27,6 +27,7 @@ import com.rassvet.essential.data.recording.RecordingRepository
 import java.io.File
 import java.text.DateFormat
 import java.util.Date
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private enum class RecordingFilter { All, Completed, Processing, Failed }
@@ -143,8 +144,17 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
             }
             DisposableEffect(row.id) { onDispose { playerState.release() } }
             val seekTo: (Long) -> Unit = { ms -> playerState.seekTo(ms, play = true) }
-            // The segment under the playhead (several when speakers overlap); the first one drives auto-scroll.
-            val activeIds = if (playerState.playing || playerState.positionMs > 0) segments.filter { playerState.positionMs >= it.startMs && playerState.positionMs < it.endMs }.map { it.id }.toSet() else emptySet()
+            // Position polling lives here, not in PlayerBar: PlayerBar is a list item and leaves composition as soon as
+            // auto-scroll moves past it, which used to freeze the playhead and the highlighted block.
+            LaunchedEffect(playerState) { snapshotFlow { playerState.playing }.collect { on -> if (on) while (playerState.playing) { playerState.refresh(); delay(100) }; playerState.refresh() } }
+            // The segment(s) under the playhead (several when speakers overlap); the first one drives auto-scroll.
+            val pos = playerState.positionMs
+            val activeIds: Set<Long> = if (!(playerState.playing || pos > 0)) emptySet() else {
+                val covering = segments.filter { pos >= it.startMs - 150 && pos < it.endMs + 150 }.map { it.id }.toSet()
+                if (covering.isNotEmpty()) covering
+                else // in a pause between sentences keep the block that just ended lit, so the highlight never blinks off
+                    segments.filter { it.endMs <= pos }.maxByOrNull { it.endMs }?.takeIf { pos - it.endMs < 2500 }?.let { setOf(it.id) } ?: emptySet()
+            }
             val firstActive = segments.firstOrNull { it.id in activeIds }?.id
             LaunchedEffect(firstActive, playerState.playing, autoScroll) {
                 if (autoScroll && playerState.playing && firstActive != null) {
@@ -246,7 +256,19 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
                 dismissButton = { TextButton(onClick = { editTarget = null }) { Text(stringResource(R.string.cancel)) } }) }
             speakerTarget?.let { speaker -> AlertDialog(onDismissRequest = { speakerTarget = null },
                 title = { Text(stringResource(R.string.speaker_rename)) },
-                text = { OutlinedTextField(speakerName, { speakerName = it }, singleLine = true) },
+                text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(speakerName, { speakerName = it }, singleLine = true)
+                    // Too many speakers detected? Say that this one is somebody else's voice.
+                    val others = speakers.filter { it.rawSpeakerId != speaker.rawSpeakerId }
+                    if (others.isNotEmpty()) {
+                        Text(stringResource(R.string.speaker_merge_into), style = MaterialTheme.typography.labelLarge)
+                        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            others.forEach { o -> AssistChip(onClick = { scope.launch { runCatching {
+                                repository.mergeSpeakers(row.id, speaker.rawSpeakerId, o.rawSpeakerId)
+                            }.onFailure { error = it.message }; speakerTarget = null } }, label = { Text(o.displayName) }) }
+                        }
+                    }
+                } },
                 confirmButton = { TextButton(onClick = { scope.launch { runCatching {
                     repository.renameSpeaker(row.id, speaker.rawSpeakerId, speakerName)
                 }.onFailure { error = it.message }; speakerTarget = null } }) { Text(stringResource(R.string.ok)) } },
