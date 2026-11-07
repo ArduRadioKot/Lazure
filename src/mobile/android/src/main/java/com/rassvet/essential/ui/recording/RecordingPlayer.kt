@@ -135,11 +135,22 @@ fun PlayerBar(player: RecordingPlayerState, audioPath: String, segments: List<Tr
                         drawRect(played, Offset((size.width * progress - 1.dp.toPx()).coerceAtLeast(0f), 0f), Size(2.dp.toPx(), size.height))
                     }
                     // speaker strip: who talks when (overlaps stack as overlapping strips of the same row)
-                    Canvas(Modifier.fillMaxWidth().height(6.dp).padding(top = 2.dp)) {
+                    val overlapColor = MaterialTheme.colorScheme.error
+                    Canvas(Modifier.fillMaxWidth().height(10.dp).padding(top = 2.dp)) {
                         val d = player.durationMs.coerceAtLeast(1)
                         segments.forEach { s ->
                             drawRect((colors[s.speakerId] ?: fallback).copy(alpha = 0.85f),
-                                Offset(size.width * s.startMs / d, 0f), Size((size.width * (s.endMs - s.startMs) / d).coerceAtLeast(1f), size.height))
+                                Offset(size.width * s.startMs / d, 0f), Size((size.width * (s.endMs - s.startMs) / d).coerceAtLeast(1f), size.height * 0.6f))
+                        }
+                        // simultaneous speech: red band under the strip wherever two speakers' segments overlap
+                        segments.forEach { a ->
+                            segments.forEach { b ->
+                                if (a.id < b.id && a.speakerId != b.speakerId) {
+                                    val st = maxOf(a.startMs, b.startMs); val en = minOf(a.endMs, b.endMs)
+                                    if (en - st > 250) drawRect(overlapColor, Offset(size.width * st / d, size.height * 0.65f),
+                                        Size((size.width * (en - st) / d).coerceAtLeast(2f), size.height * 0.35f))
+                                }
+                            }
                         }
                     }
                 }

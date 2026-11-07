@@ -100,4 +100,23 @@ class AppDatabaseMigrationTest {
         db.query("SELECT text, source_starts FROM recording_chat_messages").use { assertTrue(it.moveToFirst()); assertEquals("hi", it.getString(0)); assertEquals("", it.getString(1)) }
         helper.close()
     }
+
+    @Test
+    fun migration9To10AddsOverlapColumnWithFalseDefault() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val callback = object : SupportSQLiteOpenHelper.Callback(9) {
+            override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE transcript_segments (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, recording_id TEXT NOT NULL, speaker_id TEXT NOT NULL, start_ms INTEGER NOT NULL, end_ms INTEGER NOT NULL, text TEXT NOT NULL, original_text TEXT)")
+                db.execSQL("INSERT INTO transcript_segments (recording_id, speaker_id, start_ms, end_ms, text) VALUES ('r','speaker_1',0,1000,'hi')")
+            }
+            override fun onUpgrade(db: androidx.sqlite.db.SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+        }
+        context.deleteDatabase("migration-9-test.db")
+        val helper = FrameworkSQLiteOpenHelperFactory().create(
+            SupportSQLiteOpenHelper.Configuration.builder(context).name("migration-9-test.db").callback(callback).build())
+        val db = helper.writableDatabase
+        AppDatabaseMigrations.MIGRATION_9_10.migrate(db)
+        db.query("SELECT text, overlap FROM transcript_segments").use { assertTrue(it.moveToFirst()); assertEquals("hi", it.getString(0)); assertEquals(0, it.getInt(1)) }
+        helper.close()
+    }
 }

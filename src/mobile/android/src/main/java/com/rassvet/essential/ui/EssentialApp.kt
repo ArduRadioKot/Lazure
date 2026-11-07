@@ -125,6 +125,7 @@ private fun EssentialMainNav(
     val recordingRepository = remember(context, db) { RecordingRepository(context.applicationContext, db) }
     LaunchedEffect(recordingRepository) { runCatching { recordingRepository.recoverInterrupted() } }
     val recordings by recordingRepository.recordings.collectAsState(initial = emptyList())
+    var chatRecordingId by remember { mutableStateOf<String?>(null) }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val topDestinations = listOf("home", "vault", "ai", "settings")
@@ -161,10 +162,10 @@ private fun EssentialMainNav(
             )
         }
         composable("vault") {
-            RecordingLibraryScreen(repository = recordingRepository, onBack = { navController.navigateTopLevel("home") }, showBack = false, chatEngine = chatEngine, prefs = prefs)
+            RecordingLibraryScreen(repository = recordingRepository, onBack = { navController.navigateTopLevel("home") }, showBack = false, chatEngine = chatEngine, prefs = prefs, onAskAi = { id -> chatRecordingId = id; navController.navigateTopLevel("ai") })
         }
         composable("import") {
-            RecordingLibraryScreen(repository = recordingRepository, onBack = { navController.popBackStack() }, startImportOnOpen = true, chatEngine = chatEngine, prefs = prefs)
+            RecordingLibraryScreen(repository = recordingRepository, onBack = { navController.popBackStack() }, startImportOnOpen = true, chatEngine = chatEngine, prefs = prefs, onAskAi = { id -> chatRecordingId = id; navController.navigateTopLevel("ai") })
         }
         composable(
             route = "recording/{recordingId}",
@@ -175,10 +176,12 @@ private fun EssentialMainNav(
                 onBack = { navController.popBackStack() },
                 initialRecordingId = entry.arguments?.getString("recordingId"),
                 chatEngine = chatEngine, prefs = prefs,
+                onAskAi = { id -> chatRecordingId = id; navController.navigateTopLevel("ai") },
             )
         }
         composable("ai") {
-            ChatScreen(db = db, prefs = prefs, chatEngine = chatEngine, onBack = { navController.navigateTopLevel("home") }, onModels = { navController.navigate("models") })
+            ChatScreen(db = db, prefs = prefs, chatEngine = chatEngine, onBack = { navController.navigateTopLevel("home") }, onModels = { navController.navigate("models") },
+                initialRecordingId = chatRecordingId, onInitialRecordingConsumed = { chatRecordingId = null })
         }
         composable("live") {
             LiveRecordingScreen(db = db, onBack = { navController.popBackStack() }, onSaved = { navController.navigateTopLevel("vault") })
@@ -187,7 +190,7 @@ private fun EssentialMainNav(
             AIModelsScreen(prefs = prefs, onBack = { navController.popBackStack() })
         }
         composable("recordings") {
-            RecordingLibraryScreen(repository = recordingRepository, onBack = { navController.popBackStack() }, chatEngine = chatEngine, prefs = prefs)
+            RecordingLibraryScreen(repository = recordingRepository, onBack = { navController.popBackStack() }, chatEngine = chatEngine, prefs = prefs, onAskAi = { id -> chatRecordingId = id; navController.navigateTopLevel("ai") })
         }
         composable("settings") {
             SettingsScreen(

@@ -102,5 +102,12 @@ object AppDatabaseMigrations {
             }
         }
 
-    val ALL = arrayOf(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+    val MIGRATION_9_10 =
+        object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE transcript_segments ADD COLUMN overlap INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+    val ALL = arrayOf(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
 }

@@ -110,4 +110,12 @@
     <string name="models_choose_llm">Choose model</string>
     <string name="models_footnote">Only models shipped with the app are listed. Everything runs on this device.</string>
     <string name="models_missing">Missing from this build</string>
+    <string name="chat_attach_conversation">Add conversation as context</string>
+    <string name="chat_attached_conversation">Conversation: %1$s</string>
+    <string name="chat_detach_conversation">Remove conversation</string>
+    <string name="chat_pick_conversation">Choose a conversation</string>
+    <string name="chat_no_conversations">No processed conversations yet</string>
+    <string name="chat_sources_prefix">Sources:</string>
+    <string name="rec_interruption">Interruption</string>
+    <string name="rec_simultaneous">Both speaking</string>
 </resources>

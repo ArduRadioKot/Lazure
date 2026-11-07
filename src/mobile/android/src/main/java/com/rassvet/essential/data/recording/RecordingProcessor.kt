@@ -67,7 +67,7 @@ object RecordingProcessor {
                 }
                 if (segments.isNotEmpty()) dao.insertSegments(segments.map {
                     TranscriptSegmentEntity(recordingId = id, speakerId = rawId(it.speaker), startMs = it.startMs,
-                        endMs = it.endMs, text = it.text)
+                        endMs = it.endMs, text = it.text, overlap = it.overlap)
                 })
                 dao.setModels(id, SpeechModelPaths.ASR_ID, SpeechModelPaths.DIARIZATION_ID, "ru")
                 dao.updateStatus(id, "completed", 100, System.currentTimeMillis())

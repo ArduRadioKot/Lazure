@@ -70,8 +70,8 @@ class HybridLocalLlmEngine(
                     modelId = modelId,
                     ramMb = ramMb,
                 ).let { text ->
-                    // Qwen3 soft switch: /think and /no_think are honoured by the chat template. DeepSeek R1 always reasons.
-                    if (modelId.contains("qwen3", ignoreCase = true)) text + if (thinking) "\n/think" else "\n/no_think" else text
+                    // Qwen3 soft switch as a second line of defence: some revisions ignore the enable_thinking flag.
+                    if (!thinking && modelId.contains("qwen3", ignoreCase = true)) "$text /no_think" else text
                 }
             val thinkFilter = ThinkFilter(hide = request.hideThinking || !thinking)
             val history =
@@ -90,6 +90,7 @@ class HybridLocalLlmEngine(
                     systemInstruction = systemInstruction,
                     chatSessionKey = request.chatSessionKey,
                     history = history,
+                    thinking = thinking && !request.hideThinking,
                 )
             if (sessionResult.isFailure) {
                 val err = sessionResult.exceptionOrNull()?.message ?: "ошибка LiteRT-LM"
@@ -111,6 +112,7 @@ class HybridLocalLlmEngine(
                     session = session,
                     userText = userText,
                     onTokenCount = { count -> LocalLlmGenerationMetrics.onNativeTokenCount(count) },
+                    showThought = thinking && !request.hideThinking,
                 ).collect { chunk ->
                     gotAny = true
                     thinkFilter.feed(chunk).let { if (it.isNotEmpty()) emit(it) }

@@ -17,7 +17,9 @@ object BundledModelInstaller {
         val target = File(context.filesDir, "llm_models").apply { mkdirs() }
         for (name in names) {
             val out = File(target, name)
-            if (out.isFile && out.length() > 0) continue
+            // Replace a stale copy: the bundled revision is pinned to what the runtime library can render.
+            val bundledSize = runCatching { context.assets.openFd("$DIR/$name").use { it.length } }.getOrDefault(-1L)
+            if (out.isFile && out.length() > 0 && (bundledSize < 0 || out.length() == bundledSize)) continue
             val tmp = File(target, "$name.installing")
             runCatching {
                 context.assets.open("$DIR/$name").use { input -> tmp.outputStream().use { input.copyTo(it, 1 shl 20) } }

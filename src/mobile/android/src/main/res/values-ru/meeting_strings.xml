@@ -110,4 +110,12 @@
     <string name="models_choose_llm">Выбрать модель</string>
     <string name="models_footnote">Показаны только модели, входящие в приложение. Всё работает на устройстве.</string>
     <string name="models_missing">Нет в этой сборке</string>
+    <string name="chat_attach_conversation">Добавить разговор как контекст</string>
+    <string name="chat_attached_conversation">Разговор: %1$s</string>
+    <string name="chat_detach_conversation">Убрать разговор</string>
+    <string name="chat_pick_conversation">Выберите разговор</string>
+    <string name="chat_no_conversations">Пока нет обработанных разговоров</string>
+    <string name="chat_sources_prefix">Источники:</string>
+    <string name="rec_interruption">Перебивание</string>
+    <string name="rec_simultaneous">Говорят одновременно</string>
 </resources>

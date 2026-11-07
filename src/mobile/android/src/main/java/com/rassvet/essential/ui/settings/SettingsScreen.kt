@@ -100,6 +100,7 @@ fun SettingsScreen(
     val fontWeight by prefs.readerFontWeight.collectAsState(initial = 400)
     val streamReplies by prefs.streamReplies.collectAsState(initial = true)
     val thinkingEnabled by prefs.thinkingEnabled.collectAsState(initial = false)
+    val autoScroll by prefs.autoScrollTranscript.collectAsState(initial = true)
     val chatHaptics by prefs.chatHapticsEnabled.collectAsState(initial = true)
     val llmComputeBackend by prefs.llmComputeBackend.collectAsState(initial = LlmComputeBackend.CPU)
     val localWebResearch by prefs.localWebResearchEnabled.collectAsState(initial = true)
@@ -371,6 +372,18 @@ fun SettingsScreen(
                         }
                         persist(weight = next)
                     },
+                )
+            }
+
+            SettingsSectionTitle(stringResource(R.string.settings_section_recordings))
+
+            SettingsCard(Modifier.padding(horizontal = 20.dp)) {
+                ToggleSettingRow(
+                    icon = { Icon(LazureIcons.GraphicEq, null, Modifier.size(20.dp)) },
+                    title = stringResource(R.string.settings_autoscroll),
+                    subtitle = stringResource(R.string.settings_autoscroll_hint),
+                    checked = autoScroll,
+                    onCheckedChange = { setBool(VaultPreferencesKeys.autoScrollTranscript, it) },
                 )
             }
 

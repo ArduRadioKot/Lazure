@@ -36,7 +36,8 @@ private enum class RecordingFilter { All, Completed, Processing, Failed }
 fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, showBack: Boolean = true,
     initialRecordingId: String? = null, startImportOnOpen: Boolean = false,
     chatEngine: com.rassvet.essential.data.chat.ChatEngine? = null,
-    prefs: com.rassvet.essential.data.local.VaultPreferencesRepository? = null) {
+    prefs: com.rassvet.essential.data.local.VaultPreferencesRepository? = null,
+    onAskAi: ((String) -> Unit)? = null) {
     val rows by repository.recordings.collectAsState(initial = emptyList())
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -56,9 +57,13 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
     Scaffold(topBar = { TopAppBar(title = { Text(selected?.title ?: stringResource(R.string.recordings_title)) },
         navigationIcon = { if (showBack || selected != null) IconButton(onClick = { if (selected != null) selected = null else onBack() }) {
             Icon(LazureIcons.ArrowBack, contentDescription = stringResource(R.string.recordings_back))
-        } }, actions = { if (selected == null) IconButton(onClick = { importer.launch(arrayOf("audio/*")) }) {
-            Icon(LazureIcons.FileUpload, contentDescription = stringResource(R.string.recordings_import))
-        } }) }) { insets ->
+        } }, actions = {
+            if (selected == null) IconButton(onClick = { importer.launch(arrayOf("audio/*")) }) {
+                Icon(LazureIcons.FileUpload, contentDescription = stringResource(R.string.recordings_import))
+            } else IconButton(onClick = { renameText = selected!!.title; renameTarget = selected }) {
+                Icon(LazureIcons.Edit, contentDescription = stringResource(R.string.recordings_rename))
+            }
+        }) }) { insets ->
         if (selected == null) {
             if (rows.isEmpty()) Column(Modifier.fillMaxSize().padding(insets).padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
@@ -122,6 +127,7 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
             val row = selected!!
             val segments by repository.observeSegments(row.id).collectAsState(initial = emptyList())
             val speakers by repository.speakers(row.id).collectAsState(initial = emptyList())
+            val autoScroll by (prefs?.autoScrollTranscript ?: kotlinx.coroutines.flow.flowOf(true)).collectAsState(initial = true)
             val playerState = remember(row.id) { RecordingPlayerState(row.audioPath, row.durationMs) }
             val listState = androidx.compose.foundation.lazy.rememberLazyListState()
             var json by remember { mutableStateOf<String?>(null) }
@@ -140,8 +146,8 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
             // The segment under the playhead (several when speakers overlap); the first one drives auto-scroll.
             val activeIds = if (playerState.playing || playerState.positionMs > 0) segments.filter { playerState.positionMs >= it.startMs && playerState.positionMs < it.endMs }.map { it.id }.toSet() else emptySet()
             val firstActive = segments.firstOrNull { it.id in activeIds }?.id
-            LaunchedEffect(firstActive, playerState.playing) {
-                if (playerState.playing && firstActive != null) {
+            LaunchedEffect(firstActive, playerState.playing, autoScroll) {
+                if (autoScroll && playerState.playing && firstActive != null) {
                     val idx = segments.indexOfFirst { it.id == firstActive }
                     val header = listState.layoutInfo.totalItemsCount - segments.size - (if (error != null) 1 else 0)
                     if (idx >= 0 && header >= 0) listState.animateScrollToItem(header + idx, scrollOffset = -200)
@@ -159,7 +165,7 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
                         Button(onClick = { scope.launch { ai.summarize() } }, enabled = !ai.summarizing) {
                             Text(stringResource(R.string.rec_summarize))
                         }
-                        FilledTonalButton(onClick = { showChat = true }) { Text(stringResource(R.string.rec_ask_ai)) }
+                        FilledTonalButton(onClick = { if (onAskAi != null) onAskAi(row.id) else showChat = true }) { Text(stringResource(R.string.rec_ask_ai)) }
                     }
                 }
                 if (ai != null && ai.summarizing) item {
@@ -202,13 +208,22 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
                             Modifier.fillMaxWidth().clickable { seekTo(segment.startMs) },
                             colors = CardDefaults.cardColors(containerColor =
                                 if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh),
-                            border = if (active) androidx.compose.foundation.BorderStroke(2.dp, tint) else null,
+                            border = if (active) androidx.compose.foundation.BorderStroke(2.dp, tint)
+                                else if (segment.overlap) androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.error) else null,
                         ) {
                             Column(Modifier.padding(12.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     androidx.compose.foundation.layout.Box(Modifier.size(10.dp).background(tint, androidx.compose.foundation.shape.CircleShape))
                                     Text("  " + (spk?.displayName ?: segment.speakerId) + " · " + clock(segment.startMs) + "–" + clock(segment.endMs),
                                         style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    if (segment.overlap) {
+                                        // who talks over whom: the other speakers active in this time range
+                                        val others = segments.filter { o -> o.id != segment.id && o.speakerId != segment.speakerId &&
+                                            minOf(o.endMs, segment.endMs) - maxOf(o.startMs, segment.startMs) > 250 }
+                                            .mapNotNull { o -> speakers.firstOrNull { it.rawSpeakerId == o.speakerId }?.displayName }.distinct()
+                                        androidx.compose.material3.AssistChip(onClick = {}, modifier = Modifier.padding(start = 8.dp),
+                                            label = { Text(stringResource(R.string.rec_interruption) + if (others.isNotEmpty()) " · " + others.joinToString() else "") })
+                                    }
                                 }
                                 Text(segment.text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                                 TextButton(onClick = { editTarget = segment; editText = segment.text }) {
@@ -241,6 +256,7 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
             title = { Text(stringResource(R.string.recordings_rename_title)) },
             text = { OutlinedTextField(renameText, { renameText = it }, singleLine = true) },
             confirmButton = { TextButton(onClick = { scope.launch { runCatching { repository.rename(target.id, renameText) }
+                .onSuccess { if (selected?.id == target.id) selected = selected?.copy(title = renameText.trim()) }
                 .onFailure { error = it.message }; renameTarget = null } }) { Text(stringResource(R.string.recordings_rename)) } },
             dismissButton = { TextButton(onClick = { renameTarget = null }) { Text(stringResource(R.string.cancel)) } }) }
         deleteTarget?.let { target -> AlertDialog(onDismissRequest = { deleteTarget = null },

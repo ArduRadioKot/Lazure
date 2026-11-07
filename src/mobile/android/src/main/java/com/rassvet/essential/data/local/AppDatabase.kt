@@ -21,7 +21,7 @@ import com.rassvet.essential.BuildConfig
         RecordingChatSessionEntity::class,
         RecordingChatMessageEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {

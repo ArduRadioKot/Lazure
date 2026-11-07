@@ -31,6 +31,7 @@ internal data class LiteRtLmInstance(
     val computeBackend: String,
     val chatSessionKey: Long,
     val systemInstruction: String,
+    val thinking: Boolean = false,
 )
 
 
@@ -48,6 +49,7 @@ internal object LiteRtLmRunner {
         systemInstruction: String,
         chatSessionKey: Long,
         history: List<LocalChatTurn> = emptyList(),
+        thinking: Boolean = false,
     ): Result<LiteRtLmInstance> =
         mutex.withLock {
             val current = instance
@@ -56,7 +58,8 @@ internal object LiteRtLmRunner {
                     current.modelId == modelId &&
                     current.computeBackend == computeBackend &&
                     current.chatSessionKey == chatSessionKey &&
-                    current.systemInstruction == systemInstruction
+                    current.systemInstruction == systemInstruction &&
+                    current.thinking == thinking
             ) {
                 return@withLock Result.success(current)
             }
@@ -66,11 +69,12 @@ internal object LiteRtLmRunner {
                     current.modelId == modelId &&
                     current.computeBackend == computeBackend
             ) {
-                resetConversationLocked(current, params, systemInstruction, history)
+                resetConversationLocked(current, params, systemInstruction, history, thinking)
                 instance =
                     current.copy(
                         chatSessionKey = chatSessionKey,
                         systemInstruction = systemInstruction,
+                        thinking = thinking,
                     )
                 return@withLock Result.success(instance!!)
             }
@@ -86,6 +90,7 @@ internal object LiteRtLmRunner {
                     systemInstruction = systemInstruction,
                     chatSessionKey = chatSessionKey,
                     history = history,
+                    thinking = thinking,
                 )
             if (loaded.isFailure && LlmComputeBackend.isGpu(computeBackend)) {
                 LocalLlmLog.w("LiteRT-LM GPU init failed — retry CPU")
@@ -98,6 +103,7 @@ internal object LiteRtLmRunner {
                     systemInstruction = systemInstruction,
                     chatSessionKey = chatSessionKey,
                     history = history,
+                    thinking = thinking,
                 )
             }
             loaded
@@ -107,18 +113,29 @@ internal object LiteRtLmRunner {
         session: LiteRtLmInstance,
         userText: String,
         onTokenCount: ((Int) -> Unit)? = null,
+        showThought: Boolean = false,
     ): Flow<String> =
         callbackFlow {
             var tokens = 0
+            var inThought = false
             session.conversation.sendMessageAsync(
                 Contents.of(Content.Text(userText)),
                 object : MessageCallback {
                     override fun onMessage(message: Message) {
+                        // Reasoning arrives in the "thought" channel, the answer in the main contents.
+                        val thought = message.channels["thought"].orEmpty()
+                        if (thought.isNotEmpty() && showThought) {
+                            tokens++
+                            onTokenCount?.invoke(tokens)
+                            trySend(if (inThought) thought else "<think>$thought")
+                            inThought = true
+                        }
                         val chunk = message.toString()
                         if (chunk.isNotEmpty()) {
                             tokens++
                             onTokenCount?.invoke(tokens)
-                            trySend(chunk)
+                            trySend(if (inThought) "</think>$chunk" else chunk)
+                            inThought = false
                         }
                     }
 
@@ -147,6 +164,7 @@ internal object LiteRtLmRunner {
         params: LlamaRuntimeParams,
         systemInstruction: String,
         history: List<LocalChatTurn>,
+        thinking: Boolean,
     ) {
         LocalLlmLog.i(
             "LiteRT-LM reset conversation model=${current.modelId} " +
@@ -160,6 +178,7 @@ internal object LiteRtLmRunner {
                 systemInstruction = systemInstruction,
                 history = history,
                 computeBackend = current.computeBackend,
+                thinking = thinking,
             )
     }
 
@@ -180,6 +199,7 @@ internal object LiteRtLmRunner {
         systemInstruction: String,
         chatSessionKey: Long,
         history: List<LocalChatTurn>,
+        thinking: Boolean,
     ): Result<LiteRtLmInstance> =
         withContext(Dispatchers.Default) {
             runCatching {
@@ -222,6 +242,7 @@ internal object LiteRtLmRunner {
                         systemInstruction = systemInstruction,
                         history = history,
                         computeBackend = computeBackend,
+                        thinking = thinking,
                     )
                 LiteRtLmInstance(
                     engine = engine,
@@ -230,6 +251,7 @@ internal object LiteRtLmRunner {
                     computeBackend = computeBackend,
                     chatSessionKey = chatSessionKey,
                     systemInstruction = systemInstruction,
+                    thinking = thinking,
                 ).also { instance = it }
             }.onFailure { LocalLlmLog.e("LiteRT-LM load failed", it) }
         }
@@ -240,6 +262,7 @@ internal object LiteRtLmRunner {
         systemInstruction: String,
         history: List<LocalChatTurn>,
         computeBackend: String,
+        thinking: Boolean,
     ): Conversation {
         val config =
             ConversationConfig(
@@ -256,6 +279,9 @@ internal object LiteRtLmRunner {
                         topP = params.topP.toDouble(),
                         temperature = params.temperature.toDouble(),
                     ),
+                // Qwen3 chat template switch. Without it the model spends the whole token budget in the
+                // "thought" channel and the visible answer stays empty.
+                extraContext = mapOf("enable_thinking" to thinking),
             )
         return engine.createConversation(config)
     }

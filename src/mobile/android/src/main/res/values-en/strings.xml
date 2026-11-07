@@ -540,6 +540,9 @@
     <string name="model_local_description">%1$s is a local language model for on-device responses.</string>
     <string name="settings_thinking">Thinking mode</string>
     <string name="settings_thinking_hint">The model reasons first, then answers: slower but often more accurate. Works with Qwen3 and DeepSeek R1</string>
+    <string name="settings_section_recordings">Recordings</string>
+    <string name="settings_autoscroll">Follow playback</string>
+    <string name="settings_autoscroll_hint">Scroll the transcript to the quote being spoken</string>
 </resources>
 
 

@@ -166,10 +166,18 @@ data class PipelineOptions(
     val separate: Boolean = true,
     /** Wall-clock cap for separation (it is ~4x slower than real time on the emulator); longest regions go first. */
     val maxSeparationWallMs: Long = 90_000L,
+    /** Agglomerative-clustering distance threshold: lower splits voices more eagerly. */
+    val diarThreshold: Float = 0.5f,
+    /** Known number of speakers (-1 = detect automatically). Forces the clusterer to split/merge to exactly N. */
+    val numSpeakers: Int = -1,
+    /** Re-label each sentence from its own speaker embedding (fixes late/merged turns from the diarizer). */
+    val refineSpeakers: Boolean = true,
+    /** Cosine similarity above which two sentences are the same speaker. */
+    val sameSpeakerSimilarity: Float = 0.7f,
 )
 
 /** Matches separated sources to diarization speakers with speaker embeddings (CAM++), falling back to energy. */
-private class SpeakerMatcher(context: Context) : AutoCloseable {
+internal class SpeakerMatcher(context: Context) : AutoCloseable {
     private val extractor = com.k2fsa.sherpa.onnx.SpeakerEmbeddingExtractor(context.assets,
         SpeakerEmbeddingExtractorConfig(model = SpeechModelPaths.EMBEDDING, numThreads = 2))
 
@@ -193,7 +201,7 @@ private class SpeakerMatcher(context: Context) : AutoCloseable {
     }
 }
 
-data class PipelineSegment(val startMs: Long, val endMs: Long, val speaker: Int, val text: String)
+data class PipelineSegment(val startMs: Long, val endMs: Long, val speaker: Int, val text: String, val overlap: Boolean = false)
 
 /** VAD → ASR → diarization → timestamp alignment. Everything runs on-device through sherpa-onnx. */
 class SpeechPipeline(private val context: Context) {
@@ -245,7 +253,7 @@ class SpeechPipeline(private val context: Context) {
             if (tokens.isEmpty() && noTimestamps.isEmpty()) return emptyList()
 
             onProgress("diarization", 0f)
-            val turns = diarize(DspChain.floats(diarSignal)) { onProgress("diarization", it) }
+            val turns = diarize(DspChain.floats(diarSignal), options.diarThreshold, options.numSpeakers) { onProgress("diarization", it) }
             val regions = overlapRegions(turns)
             val overlapS = overlapSeconds(turns)
             android.util.Log.i("SpeechPipeline", "speakers=${turns.map { it.speaker }.distinct().size} overlapped=${"%.1f".format(overlapS)}s regions=${regions.size} of ${samples.size / 16000}s")
@@ -284,15 +292,22 @@ class SpeechPipeline(private val context: Context) {
             }
 
             onProgress("align", 0f)
+            // Sentence-level speaker refinement: pyannote turn boundaries lag at speaker changes and its clusterer
+            // can merge similar voices, so every sentence is re-labelled from its own CAM++ embedding.
+            val units = if (options.refineSpeakers) {
+                runCatching { refineSpeakers(samples, tokens.filter { t -> replaced.none { t.ms in it } }, turns, options) }
+                    .onFailure { android.util.Log.e("SpeechPipeline", "speaker refinement failed", it) }.getOrNull()
+            } else null
             val all = ArrayList<Tok>()
             for (t in tokens) {
                 if (replaced.any { t.ms in it }) continue            // words inside a separated region come from the separated streams
-                all += t.copy(speaker = speakerAt(turns, t.ms))
+                all += t.copy(speaker = units?.let { u -> speakerFromUnits(u, t.ms) } ?: speakerAt(turns, t.ms))
             }
             all += separated
             val out = groupTokens(all)
             noTimestamps.forEach { out += it.copy(speaker = dominantSpeaker(turns, it.startMs, it.endMs)) }
-            return mergeAdjacent(out.filter { it.text.isNotBlank() }.sortedBy { it.startMs }, durationLimitMs = audioDurationMs(samples))
+            val merged = mergeAdjacent(out.filter { it.text.isNotBlank() }.sortedBy { it.startMs }, durationLimitMs = audioDurationMs(samples))
+            return markOverlaps(merged, regions)
         } finally { recognizer?.release() }
     }
 
@@ -305,7 +320,120 @@ class SpeechPipeline(private val context: Context) {
 
     private data class SeparatedRegion(val region: Region, val windowStartMs: Long, val owner: IntArray, val src: Array<FloatArray>)
 
+    /** A segment is an interruption when another speaker is active in it: separated streams or a diarizer overlap region. */
+    private fun markOverlaps(segs: List<PipelineSegment>, regions: List<Region>): List<PipelineSegment> =
+        segs.map { s ->
+            val withOther = segs.any { o -> o !== s && o.speaker != s.speaker && minOf(o.endMs, s.endMs) - maxOf(o.startMs, s.startMs) > 250 }
+            val inRegion = regions.any { r -> minOf(r.endMs, s.endMs) - maxOf(r.startMs, s.startMs) > 250 }
+            if (withOther || inRegion) s.copy(overlap = true) else s
+        }
+
     private data class Tok(val ms: Long, val text: String, val speaker: Int)
+    private data class SpeakerUnit(val startMs: Long, val endMs: Long, val speaker: Int)
+
+    private fun speakerFromUnits(units: List<SpeakerUnit>, ms: Long): Int? {
+        var lo = 0; var hi = units.size - 1; var best: Int? = null
+        while (lo <= hi) {
+            val mid = (lo + hi) ushr 1; val u = units[mid]
+            if (ms < u.startMs) hi = mid - 1 else if (ms > u.endMs) lo = mid + 1 else { best = u.speaker; break }
+        }
+        if (best != null) return best
+        // between units: nearest unit in time
+        val i = lo.coerceIn(0, units.size - 1)
+        val a = units.getOrNull(i - 1); val b = units.getOrNull(i)
+        return listOfNotNull(a, b).minByOrNull { minOf(kotlin.math.abs(it.startMs - ms), kotlin.math.abs(it.endMs - ms)) }?.speaker
+    }
+
+    /**
+     * Splits the transcript into sentence units (sentence punctuation or >0.35 s pause), embeds each unit (>= 1 s),
+     * clusters the embeddings online around centroids, then maps clusters to diarizer speaker ids by overlap so ids stay
+     * consistent with the overlap/separation stage. Returns units sorted by time.
+     */
+    private fun refineSpeakers(
+        samples: ShortArray, tokens: List<Tok>,
+        turns: List<com.k2fsa.sherpa.onnx.OfflineSpeakerDiarizationSegment>, options: PipelineOptions,
+    ): List<SpeakerUnit>? {
+        if (tokens.size < 2) return null
+        val sorted = tokens.sortedBy { it.ms }
+        // 1) sentence units
+        data class Raw(var start: Long, var end: Long)
+        val raws = ArrayList<Raw>()
+        var cur: Raw? = null
+        for ((i, t) in sorted.withIndex()) {
+            val c = cur
+            if (c == null) cur = Raw(t.ms, t.ms + 160) else { c.end = t.ms + 160 }
+            val body = t.text.replace("▁", "").trim()
+            val endsSentence = body.isNotEmpty() && body.last() in ".?!"
+            val gap = if (i + 1 < sorted.size) sorted[i + 1].ms - (t.ms + 160) else 0L
+            if (endsSentence || gap > 350) { raws += cur!!; cur = null }
+        }
+        cur?.let { raws += it }
+        // 2) merge units shorter than 1.2 s into the previous one when the pause is small
+        val units = ArrayList<Raw>()
+        for (r in raws) {
+            val p = units.lastOrNull()
+            if (p != null && (r.end - r.start < 1000 || p.end - p.start < 1000) && r.start - p.end < 600) p.end = r.end else units += Raw(r.start, r.end)
+        }
+        if (units.size < 2) return null
+        val matcher = SpeakerMatcher(context)
+        try {
+            val emb = units.map { u ->
+                val from = (u.start * 16).toInt(); val to = minOf((u.end * 16).toInt(), from + 15 * 16000)
+                matcher.embed(DspChain.floats(samples, from, to))?.also { e -> val n = Math.sqrt(e.sumOf { (it * it).toDouble() }).toFloat() + 1e-9f; for (k in e.indices) e[k] /= n }
+            }
+            // 3) online clustering with centroids, then two refinement passes
+            val maxSpk = if (options.numSpeakers > 0) options.numSpeakers else 8
+            val cents = ArrayList<FloatArray>(); val counts = ArrayList<Int>(); val label = IntArray(units.size) { -1 }
+            fun dot(a: FloatArray, b: FloatArray): Float { var d = 0f; for (i in a.indices) d += a[i] * b[i]; return d }
+            fun norm(v: FloatArray): FloatArray { val n = Math.sqrt(v.sumOf { (it * it).toDouble() }).toFloat() + 1e-9f; return FloatArray(v.size) { v[it] / n } }
+            for ((i, e) in emb.withIndex()) {
+                if (e == null) continue
+                var best = -1; var bs = -2f
+                for (k in cents.indices) { val s = dot(cents[k], e); if (s > bs) { bs = s; best = k } }
+                if (best >= 0 && (bs >= options.sameSpeakerSimilarity || cents.size >= maxSpk)) {
+                    label[i] = best; counts[best]++
+                    cents[best] = norm(FloatArray(e.size) { cents[best][it] * (counts[best] - 1) + e[it] })
+                } else { cents += e.copyOf(); counts += 1; label[i] = cents.size - 1 }
+            }
+            repeat(2) {
+                val sums = cents.map { FloatArray(it.size) }; val n = IntArray(cents.size)
+                for ((i, e) in emb.withIndex()) {
+                    if (e == null) continue
+                    var best = 0; var bs = -2f
+                    for (k in cents.indices) { val s = dot(cents[k], e); if (s > bs) { bs = s; best = k } }
+                    label[i] = best; for (d in e.indices) sums[best][d] += e[d]; n[best]++
+                }
+                for (k in cents.indices) if (n[k] > 0) cents[k] = norm(sums[k])
+            }
+            // fixed speaker count: merge closest centroids until k remain
+            if (options.numSpeakers > 0) while (cents.map { c -> label.count { it == cents.indexOf(c) } }.count { it > 0 } > options.numSpeakers) {
+                val live = cents.indices.filter { k -> label.any { it == k } }
+                var bi = -1; var bj = -1; var bs = -2f
+                for (a in live) for (b in live) if (a < b) { val s = dot(cents[a], cents[b]); if (s > bs) { bs = s; bi = a; bj = b } }
+                for (i in label.indices) if (label[i] == bj) label[i] = bi
+            }
+            // units without an embedding take the label of the nearest labelled neighbour
+            for (i in label.indices) if (label[i] < 0) {
+                label[i] = (1..label.size).firstNotNullOfOrNull { d -> label.getOrNull(i - d)?.takeIf { it >= 0 } ?: label.getOrNull(i + d)?.takeIf { it >= 0 } } ?: 0
+            }
+            // 4) map clusters to diarizer ids by overlap (largest clusters first), new ids for the rest
+            val clusterIds = label.distinct()
+            val size = clusterIds.associateWith { c -> units.indices.filter { label[it] == c }.sumOf { units[it].end - units[it].start } }
+            val used = HashSet<Int>(); val mapping = HashMap<Int, Int>()
+            var nextId = (turns.maxOfOrNull { it.speaker } ?: -1) + 1
+            for (c in clusterIds.sortedByDescending { size[it] }) {
+                val votes = HashMap<Int, Double>()
+                for (i in units.indices) if (label[i] == c) for (t in turns) {
+                    val o = minOf(units[i].end / 1000f, t.end) - maxOf(units[i].start / 1000f, t.start)
+                    if (o > 0) votes.merge(t.speaker, o.toDouble(), Double::plus)
+                }
+                val pick = votes.entries.sortedByDescending { it.value }.firstOrNull { it.key !in used }?.key ?: nextId++
+                used += pick; mapping[c] = pick
+            }
+            android.util.Log.i("SpeechPipeline", "refined speakers: ${clusterIds.size} clusters from ${units.size} sentences, mapping=$mapping")
+            return units.indices.map { SpeakerUnit(units[it].start, units[it].end, mapping[label[it]] ?: 0) }
+        } finally { matcher.close() }
+    }
     private data class Region(val startMs: Long, val endMs: Long, val a: Int, val b: Int)
 
     private fun recognizeSamples(rec: OfflineRecognizer, x: FloatArray): com.k2fsa.sherpa.onnx.OfflineRecognizerResult {
@@ -519,16 +647,17 @@ class SpeechPipeline(private val context: Context) {
         return result
     }
 
-    private fun diarize(samples: FloatArray, onProgress: (Float) -> Unit): List<com.k2fsa.sherpa.onnx.OfflineSpeakerDiarizationSegment> {
+    private fun diarize(samples: FloatArray, threshold: Float, numSpeakers: Int, onProgress: (Float) -> Unit): List<com.k2fsa.sherpa.onnx.OfflineSpeakerDiarizationSegment> {
         val diar = OfflineSpeakerDiarization(context.assets, OfflineSpeakerDiarizationConfig(
             segmentation = OfflineSpeakerSegmentationModelConfig(
                 pyannote = OfflineSpeakerSegmentationPyannoteModelConfig(model = SpeechModelPaths.SEGMENTATION),
                 numThreads = threads(),
             ),
             embedding = SpeakerEmbeddingExtractorConfig(model = SpeechModelPaths.EMBEDDING, numThreads = threads()),
-            clustering = FastClusteringConfig(numClusters = -1, threshold = 0.5f),
-            minDurationOn = 0.2f, minDurationOff = 0.5f,
+            clustering = FastClusteringConfig(numClusters = numSpeakers, threshold = threshold),
+            minDurationOn = 0.15f, minDurationOff = 0.3f,
         ))
+        android.util.Log.i("SpeechPipeline", "diarize threshold=$threshold numSpeakers=$numSpeakers")
         return try {
             onProgress(0f)
             diar.process(samples).toList().also { onProgress(1f) }

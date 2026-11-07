@@ -2,6 +2,8 @@ package com.rassvet.essential.ui.chat
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -69,8 +71,19 @@ fun ChatScreen(
     chatEngine: ChatEngine,
     onBack: () -> Unit,
     onModels: () -> Unit = {},
+    initialRecordingId: String? = null,
+    onInitialRecordingConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
+    val recRepo = remember(context, db) { com.rassvet.essential.data.recording.RecordingRepository(context.applicationContext, db) }
+    var attached by remember { mutableStateOf<com.rassvet.essential.data.local.RecordingEntity?>(null) }
+    var showPicker by remember { mutableStateOf(false) }
+    val allRecordings by recRepo.recordings.collectAsState(initial = emptyList())
+    LaunchedEffect(initialRecordingId, allRecordings) {
+        if (initialRecordingId != null) {
+            allRecordings.firstOrNull { it.id == initialRecordingId }?.let { attached = it; onInitialRecordingConsumed() }
+        }
+    }
     val scope = rememberCoroutineScope()
     val activeGguf by prefs.activeGgufName.collectAsState(initial = null)
     val streamReplies by prefs.streamReplies.collectAsState(initial = true)
@@ -103,7 +116,27 @@ fun ChatScreen(
             val history = messages.take(assistantIdx - 1).map { (role, content) -> ChatEngine.HistoryLine(role == "user", content) }
             val output = StringBuilder()
             var lastPublishedAt = 0L
+            val rec = attached
             val reply = runCatching {
+                if (rec != null) {
+                    // Conversation as context: retrieve the most relevant transcript lines for this question.
+                    val segs = recRepo.segmentsOnce(rec.id)
+                    val names = com.rassvet.essential.data.recording.RecordingAi.nameMap(recRepo.speakersOnce(rec.id))
+                    val hits = com.rassvet.essential.data.recording.RecordingAi.retrieve(userText, segs, 8)
+                    val ctx = hits.joinToString("\n") { com.rassvet.essential.data.recording.RecordingAi.line(it, names) }
+                    val system = "Answer the user's question about the conversation \"${rec.title}\" in 1-3 short sentences, " +
+                        "in the language of the question. Use only the excerpts below; if the answer is not there, say so. " +
+                        "Do not repeat the excerpts.\n\nExcerpts:\n$ctx"
+                    val answer = chatEngine.completeLocalIsolated(
+                        system = system, user = userText, history = history, modelId = activeGguf.orEmpty(),
+                    ) { chunk ->
+                        output.append(chunk)
+                        val now = android.os.SystemClock.uptimeMillis()
+                        if (now - lastPublishedAt >= 50L) { messages[assistantIdx] = "assistant" to output.toString(); lastPublishedAt = now }
+                    }.trim()
+                    val cited = hits.joinToString(", ") { "[" + com.rassvet.essential.data.recording.RecordingAi.timecode(it.startMs) + "]" }
+                    if (answer.isBlank()) answer else answer + (if (cited.isNotEmpty()) "\n\n" + context.getString(R.string.chat_sources_prefix) + " " + cited else "")
+                } else
                 chatEngine.streamReply(
                     ChatEngine.Request(
                         userVisibleText = userText,
@@ -138,6 +171,28 @@ fun ChatScreen(
         }
     }
 
+    if (showPicker) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showPicker = false },
+            title = { Text(stringResource(R.string.chat_pick_conversation)) },
+            text = {
+                val done = allRecordings.filter { it.processingStatus == "completed" }
+                if (done.isEmpty()) Text(stringResource(R.string.chat_no_conversations))
+                else LazyColumn {
+                    items(done.size) { i ->
+                        val r = done[i]
+                        androidx.compose.material3.ListItem(
+                            headlineContent = { Text(r.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            supportingContent = { Text(java.text.DateFormat.getDateTimeInstance().format(java.util.Date(r.createdAt))) },
+                            modifier = Modifier.clickable { attached = r; showPicker = false },
+                        )
+                    }
+                }
+            },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -155,7 +210,19 @@ fun ChatScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                attached?.let { rec ->
+                    androidx.compose.material3.InputChip(
+                        selected = true, onClick = { showPicker = true },
+                        label = { Text(stringResource(R.string.chat_attached_conversation, rec.title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        leadingIcon = { Icon(LazureIcons.AudioFile, null, Modifier.size(18.dp)) },
+                        trailingIcon = { Icon(LazureIcons.Close, stringResource(R.string.chat_detach_conversation), Modifier.size(18.dp).clickable { attached = null }) },
+                    )
+                }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    IconButton(onClick = { showPicker = true }, enabled = !isThinking) {
+                        Icon(LazureIcons.AudioFile, contentDescription = stringResource(R.string.chat_attach_conversation),
+                            tint = if (attached != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                     OutlinedTextField(
                         modifier = Modifier.weight(1f),
                         value = input,

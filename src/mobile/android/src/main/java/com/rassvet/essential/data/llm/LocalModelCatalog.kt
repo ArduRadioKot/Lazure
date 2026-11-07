@@ -53,7 +53,7 @@ object LocalModelCatalog {
                 pageUrl = "https://huggingface.co/litert-community/Qwen3-0.6B",
                 url =
                     "https://huggingface.co/litert-community/Qwen3-0.6B/" +
-                        "resolve/main/Qwen3-0.6B.litertlm",
+                        "resolve/49837332af6863b008a73a5394ed60789504069d/Qwen3-0.6B.litertlm",
                 fileName = "Qwen3-0.6B.litertlm",
                 ramMb = 1800,
                 expectedBytes = 614_236_160L,

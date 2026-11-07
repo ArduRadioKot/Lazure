@@ -540,6 +540,9 @@
     <string name="model_local_description">%1$s — локальная языковая модель для работы на устройстве.</string>
     <string name="settings_thinking">Режим размышления (think)</string>
     <string name="settings_thinking_hint">Модель сначала рассуждает, затем отвечает. Дольше и точнее. Работает с Qwen3 и DeepSeek R1</string>
+    <string name="settings_section_recordings">Recordings</string>
+    <string name="settings_autoscroll">Follow playback</string>
+    <string name="settings_autoscroll_hint">Scroll the transcript to the quote being spoken</string>
 </resources>
 
 

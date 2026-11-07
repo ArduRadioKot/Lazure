@@ -71,6 +71,7 @@ object VaultPreferencesKeys {
     val thinkingEnabled = booleanPreferencesKey("thinking_enabled")
     val speechDenoiseEnabled = booleanPreferencesKey("speech_denoise_enabled")
     val speechSeparationEnabled = booleanPreferencesKey("speech_separation_enabled")
+    val autoScrollTranscript = booleanPreferencesKey("auto_scroll_transcript")
     val chatHapticsEnabled = booleanPreferencesKey("chat_haptics_enabled")
     val typewriterEffect = booleanPreferencesKey("typewriter_effect")
 
@@ -176,6 +177,10 @@ class VaultPreferencesRepository(
     /** MossFormer2 separation of overlapped speech (slower than real time on phones). */
     val speechSeparationEnabled: Flow<Boolean> =
         context.dataStore.data.map { it[VaultPreferencesKeys.speechSeparationEnabled] ?: true }
+
+    /** Follow the playhead: scroll the transcript to the quote being spoken. */
+    val autoScrollTranscript: Flow<Boolean> =
+        context.dataStore.data.map { it[VaultPreferencesKeys.autoScrollTranscript] ?: true }
 
     suspend fun setSpeechDenoiseEnabled(v: Boolean) { context.dataStore.edit { it[VaultPreferencesKeys.speechDenoiseEnabled] = v } }
     suspend fun setSpeechSeparationEnabled(v: Boolean) { context.dataStore.edit { it[VaultPreferencesKeys.speechSeparationEnabled] = v } }

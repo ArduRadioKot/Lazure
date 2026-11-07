@@ -32,6 +32,8 @@ data class TranscriptSegmentEntity(
     @ColumnInfo(name = "end_ms") val endMs: Long,
     val text: String,
     @ColumnInfo(name = "original_text") val originalText: String? = null,
+    /** True when this stretch overlaps another speaker (interruption / simultaneous speech). */
+    @ColumnInfo(name = "overlap", defaultValue = "0") val overlap: Boolean = false,
 )
 
 @Entity(
