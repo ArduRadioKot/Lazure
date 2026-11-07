@@ -2,20 +2,42 @@
 
 ## Поддерживаемые условия
 
-- Audio import via Android document picker; audio copy remains in application-private storage.
-- Audio playback from the copied file, Room metadata persistence, deletion, and exact-shape JSON export (empty transcript until inference exists).
+- Android 7.0+ (API 24), телефоны `arm64-v8a`. Сборка `x86_64` нужна для эмулятора.
+- Русская речь. GigaAM v3 обучена на русском; другие языки распознаются плохо (диаризация от языка не зависит).
+- Любой аудиоформат, который декодирует `MediaCodec` устройства. Внутри всё приводится к моно 16 кГц.
+- 1–6 говорящих. Автоопределение числа говорящих работает лучше всего на 2–4 участниках. Если число известно, его стоит задать в настройках.
+- Записи до ~20 минут проверены на эмуляторе без нехватки памяти. Диаризация держит одну float-копию аудио (~230 МБ на час записи).
+- Работа без сети: распознавание, диаризация, LLM и экспорт.
 
 ## Известные ограничения
 
-- No offline ASR runtime/model or speaker diarization engine/model is currently included. Automatic transcription, diarization, timestamps, recording, transcript editing, summaries, and recording-scoped chat are not implemented.
-- There is no audio capture flow or foreground recording service yet.
-- JSON export is structurally valid for an unprocessed recording, but it has no transcript segments and is not a competition-ready transcription result.
-- Instrumentation tests and app installation/start were exercised on the `processing-phone` ARM64 emulator. Migration was checked against preserved legacy table names, but not against a copy of a real user's database. Import/playback were not exercised end to end with a sample recording.
-- `MediaMetadataRetriever` duration and audio playback depend on Android platform codec support. Import reports a clear error when no readable audio track is available.
+- **Наложения речи.** pyannote 3.0 видит не больше двух одновременных голосов. Третий голос ищется повторным разделением MossFormer2, но сепаратор обучен на двух источниках, и на трёх голосах поток может остаться смешанным.
+- **Скорость разделения.** MossFormer2 медленнее реального времени (на эмуляторе RTF ≈ 4 на участках наложения). Поэтому разделение ограничено 90 с на запись, самые длинные участки обрабатываются первыми. Его можно выключить, если важнее скорость.
+- **Очень короткие реплики** (0,4–0,7 с, одно слово) иногда уходят соседнему говорящему: эмбеддинг на таком отрезке ненадёжен.
+- **Нормализация текста.** GigaAM пишет числа цифрами и ставит пунктуацию. Если эталон записан словами без знаков, WER без нормализации будет выше реального.
+- **Эмбеддинги говорящих** — 3D-Speaker CAM++, обученная на китайском и английском. Для разделения голосов она работает, но русскоязычных замеров DER у нас пока нет.
+- **Локальная LLM** (Qwen3 0.6B INT4, контекст ~1300 токенов) даёт короткие и иногда неточные ответы. Краткое содержание строится map-reduce по фрагментам. LLM не меняет текст расшифровки, чтобы не ухудшать WER.
+- **Размер APK.** Модели речи и LLM встроены в APK, поэтому release-APK весит несколько сотен мегабайт. Debug-APK со всеми ABI — около 1,2 ГБ.
+- **AEC** при записи из приложения зависит от устройства: используется системный `AcousticEchoCanceler`, если он есть.
 
 ## Что не входит в текущую версию
 
+- Потоковая расшифровка во время записи: запись обрабатывается после остановки.
+- Повторное распознавание одной выбранной реплики: можно только обработать запись заново целиком.
+- Аппаратное ускорение ASR (NNAPI/QNN): всё работает на CPU, LLM может работать на GPU.
+- Модели для других языков.
+
 ## Риски демонстрации
+
+- Первая обработка после установки дольше: модели загружаются из APK в память.
+- На слабых устройствах (< 4 ГБ RAM) разделение наложений и LLM могут работать медленно. Разделение отключается в «Модели ИИ».
+- Скорость нужно мерить на release-сборке: debug-сборка заметно медленнее на Kotlin-этапах.
+- Встроенная LLM копируется во внутреннюю память при первом запуске (~350 МБ свободного места).
 
 ## Дальнейшее развитие
 
+- Сравнить GigaAM v3 RNNT и CTC по WER на наших записях и выбрать лучшую модель.
+- Заменить CAM++ эмбеддером, обученным на русскоязычных данных, и измерить DER.
+- Ускорить ASR через NNAPI/QNN execution provider ONNX Runtime.
+- Повторное распознавание отдельной реплики с другими настройками.
+- Потоковый режим для записи из приложения.

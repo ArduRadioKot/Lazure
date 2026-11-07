@@ -2,21 +2,95 @@
 
 ## Контекст
 
+Lazure — Android-приложение «нейро-стенографист». Пользователь импортирует аудиозапись из памяти устройства или записывает разговор в приложении. Приложение на устройстве:
+
+1. распознаёт речь (ASR);
+2. определяет говорящих (диаризация);
+3. ставит временные метки репликам;
+4. показывает расшифровку с плеером и экспортирует её в JSON по схеме конкурса.
+
+Локальная LLM строит краткое содержание разговора и отвечает на вопросы по расшифровке.
+
+Все этапы выполняются на устройстве. Аудио, текст и запросы к LLM не уходят в сеть. Разрешение `INTERNET` используется только для необязательного скачивания дополнительных LLM из каталога. Основная задача (распознавание, диаризация, экспорт) работает в авиарежиме.
+
 ## Компоненты
 
-- Android application module: `:app` (`src/mobile/android`). Existing navigation uses Compose Navigation and the existing Home drawer; audio library is an additional destination.
-- Existing notes, chat history and FTS remain in Room database `essential.db`.
-- Audio metadata is stored in Room `recordings`; transcript utterances are stored in `transcript_segments`. Version 6 → 7 migration creates only the new tables and indices.
-- Imported audio is copied from the SAF `OpenDocument` URI into the app-private `files/recordings` directory. Playback reads that local copy. No network permission or service is used for import or playback.
-- `TranscriptExport` validates timestamp order/ranges and emits the competition JSON object. It does not create ASR output.
-- `RecordingRepository` is the boundary for import, persistence, deletion and export. An offline recognizer/diarizer can be added behind this boundary once runtime and licensed models are selected.
+```
+ Импорт (SAF) / Запись (RecordingService, AudioRecord + AEC)
+                     │  копия файла в files/recordings
+                     ▼
+ RecordingProcessor ── единая очередь обработки, прогресс и статус в Room
+                     ▼
+ SpeechPipeline (data/recording/SpeechPipeline.kt)
+   1. MediaCodec decode → моно 16 кГц PCM16 (любой формат, который декодирует Android)
+   2. Улучшение: ФВЧ 80 Гц → RMS-нормализация → компрессор/лимитер (AudioDsp.kt)
+      DTLN-шумоподавление (DtlnDenoiser.kt) — только для детектора речи
+   3. Silero VAD → сегменты речи (+0,25 с до / +0,15 с после, не заходя в соседний)
+   4. GigaAM v3 CTC (sherpa-onnx) на каждом сегменте → токены с абсолютным временем
+   5. Диаризация: pyannote segmentation 3.0 + эмбеддинги CAM++ + кластеризация
+   6. Уточнение говорящих: каждое предложение получает свой эмбеддинг CAM++,
+      онлайн-кластеризация, слияние похожих и поглощение «шумовых» кластеров
+   7. Наложения: области, где говорят ≥ 2 человек, разделяются MossFormer2,
+      каждый поток распознаётся заново и приписывается говорящему по эмбеддингу
+   8. Выравнивание: токены → реплики говорящих, границы реплик, флаг перебивания
+                     ▼
+ Room (recordings, transcript_segments, speakers, recording_summaries, ...)
+                     ▼
+ UI: архив, карточка записи (плеер, волна, подсветка текущей реплики, переход
+     по клику, правка текста и имён, слияние говорящих, повторная обработка)
+ Экспорт: TranscriptExport → {"transcript":[{speaker_id,start_ms,end_ms,text}]}
+ Локальная LLM (LiteRT-LM, Qwen3 0.6B INT4): краткое содержание и вопросы по записи
+```
+
+| Пакет | Назначение |
+|---|---|
+| `data/recording` | Пайплайн распознавания, очередь обработки, экспорт JSON, AI по записи |
+| `data/local` | Room (`essential.db`, версия 11), DataStore-настройки |
+| `data/llm` | LiteRT-LM: каталог локальных моделей, загрузка, встроенная модель, запуск |
+| `data/chat` | Локальный чат и изолированное выполнение запросов к LLM |
+| `service` | Foreground-сервисы записи и загрузки моделей |
+| `ui/recording` | Архив, карточка записи, плеер, экран записи |
+| `ui/home`, `ui/chat`, `ui/models`, `ui/settings` | Главный экран, AI-чат, модели, настройки |
+| `com/k2fsa/sherpa/onnx` | Kotlin-обёртки sherpa-onnx (JNI-библиотека подкладывается скриптом) |
 
 ## Основные технические решения
 
-- Existing UI theme, navigation, and application name are preserved.
-- Destructive Room fallback has been removed from debug database creation so an unrecognized migration cannot silently erase a user's local database.
-- Processing status `awaiting_asr` is explicit: imported audio is not misrepresented as transcribed.
+- **sherpa-onnx (ONNX Runtime)** — один рантайм для VAD, ASR и диаризации. В сборке используется статически слинкованная JNI-библиотека, поэтому она не конфликтует с `onnxruntime-android`, который запускает DTLN и MossFormer2.
+- **GigaAM v3 CTC с пунктуацией.** Это русскоязычная модель Сбера, она сразу восстанавливает знаки препинания. CTC даёт время каждого токена, из него строятся метки реплик.
+- **Конец реплики** считается как начало следующего токена в том же VAD-сегменте, а для последнего токена — как конец речи по VAD. Так конец не обрезается на длительность последнего слова.
+- **DTLN управляет только VAD.** На очищенном DTLN сигнале GigaAM ошибается чаще, чем на исходном. Поэтому шумоподавленный сигнал (смесь 70 % DTLN и 30 % исходного) используется только для поиска речи, а распознаётся сигнал после ФВЧ и нормализации.
+- **Диаризация получает сигнал только после ФВЧ.** На сжатом компрессором сигнале кластеризация дробит одного человека на нескольких.
+- **Говорящих уточняет второй проход.** pyannote склонна переразбивать говорящих и запаздывать на смене реплик, поэтому итоговые идентификаторы определяет кластеризация эмбеддингов по предложениям. Короткие реплики («Угу», «Да») размечаются по эмбеддингу с учётом «чистоты» кластера диаризатора.
+- **Разделение наложений** включается, только если диаризатор нашёл одновременную речь ≥ 0,6 с. Время на него ограничено 90 с на запись, самые длинные области обрабатываются первыми. Этап можно отключить в настройках.
+- **Пиковая память ограничена.** Улучшение сигнала идёт блоками PCM16, ASR-модель выгружается на время работы сепаратора.
+- **Устойчивость.** Обработка — единая очередь. Задачи, прерванные убийством процесса, после перезапуска помечаются как ошибка, и их можно обработать заново одной кнопкой. WAV-заголовок записи обновляется каждые ~2 с, поэтому запись, оборванную убийством процесса, удаётся восстановить.
+- **LLM** работает через `ChatEngine.completeLocalIsolated`: без поиска по хранилищу, сети и веб-контекста. Для краткого содержания используется map-reduce по фрагментам ~1500 символов, для вопросов — TF-IDF-поиск по репликам с цитатами `[m:ss]`.
+- **Экспорт** строго соответствует схеме конкурса: один верхний ключ `transcript`, у реплики поля `speaker_id`, `start_ms`, `end_ms`, `text`. Перед записью проверяется порядок и корректность меток.
 
 ## Зависимости
 
+| Компонент | Версия | Лицензия |
+|---|---|---|
+| sherpa-onnx (JNI, static ONNX Runtime) | 2.0.1 | Apache-2.0 |
+| onnxruntime-android | 1.28.0 | MIT |
+| LiteRT-LM | 0.12.0 | Apache-2.0 |
+| Jetpack Compose, Material 3, Room, DataStore, Hilt | см. `gradle/libs.versions.toml` | Apache-2.0 |
+
+| Этап | Модель | Лицензия |
+|---|---|---|
+| VAD | Silero VAD | MIT |
+| ASR | GigaAM v3 CTC с пунктуацией, int8 (sherpa-onnx export) | MIT |
+| Диаризация | pyannote segmentation 3.0 (int8) + 3D-Speaker CAM++ | MIT / Apache-2.0 |
+| Шумоподавление | DTLN | MIT |
+| Разделение наложений | MossFormer2_SS_16K, экспорт в ONNX + int8 | Apache-2.0 |
+| LLM | Qwen3 0.6B INT4 (LiteRT-LM), встроена в APK | Apache-2.0 |
+
+Полный манифест моделей с источниками: [`tools/models/manifest.json`](../tools/models/manifest.json). Скачивание: [`tools/models/fetch_models.sh`](../tools/models/fetch_models.sh).
+
 ## Безопасность и приватность
+
+- Распознавание, диаризация, LLM и экспорт работают без сети. Облачных API в приложении нет.
+- Аудио и расшифровки хранятся в приватном каталоге приложения (`files/recordings`) и в Room. Резервное копирование отключено в release-сборке (`allowBackup=false`).
+- Экспорт выполняется только в выбранное пользователем место через системный диалог.
+- PIN-код блокирует доступ к приложению: HMAC-SHA256 на ключе Android Keystore, сам PIN не сохраняется. При включённом PIN экран защищён от скриншотов.
+- Сеть нужна только для необязательного скачивания дополнительных LLM. Встроенная LLM копируется из APK при первом запуске.

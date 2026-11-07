@@ -1,4 +1,9 @@
-# Lazure — implementation progress
+# Lazure — журнал разработки
+
+> Хронологический журнал этапов, замеров и найденных причин ошибок. Записи сохранены в том виде, в каком делались,
+> поэтому ранние разделы описывают состояние до появления ASR. Актуальное состояние — в [README](../README.md),
+> [ARCHITECTURE](ARCHITECTURE.md) и [LIMITATIONS](LIMITATIONS.md). После очистки репозитория (последний раздел)
+> `speech-decoder/scripts` и `speech-decoder/models` переехали в `tools/models`, `speech-decoder/bench` — в `tools/bench`.
 
 Updated: 2026-11-07
 
@@ -235,3 +240,15 @@ Full changed-file list, screenshot provenance and verification scope: `docs/UI_P
 
 - The recogniser never gets the DTLN output (it hears high-passed, normalised audio); DTLN only feeds the speech detector, which is where quiet words and soft onsets get "swallowed" (a segment the detector never sees is never recognised). The detector signal is now a dry/wet mix (`denoiseStrength` 0.7, was full DTLN) and the Silero threshold is 0.45 (was 0.5). With the 0.25 s / 0.15 s padding added earlier, the recogniser also gets audio around each detected segment.
 - Measured on the synthetic bench (clean and with pink noise at roughly 7 dB SNR): no measurable gain or loss from weaker denoising (clean 96.1-96.7 %, noisy 79-87 %, spread comparable to the differences); the bench does not reproduce the "swallowed words" effect, so this is a conservative change, not a verified fix. Disabling denoise entirely was worse on noisy speech (rapid 3-voice 79 % vs 89 %), so the toggle stays on by default.
+
+## Очистка репозитория и подготовка к сдаче (2026-11-07)
+
+- Удалён весь облачный код, унаследованный от исходного приложения заметок: REST-клиент, авторизация, подписки, синхронизация, клиенты Gemini, OpenAI-совместимых API и Timeweb, а также веб-поиск DuckDuckGo/wttr.in в чате (он был включён по умолчанию). `ChatEngine` теперь только локальный. Из `BuildConfig` убраны `ALLOW_DIRECT_CLOUD` и ключи API.
+- Удалены недостижимые экраны (заметки, редактор, граф, онбординг хранилища, авторизация), около 1200 неиспользуемых строк в трёх локалях, вендорная копия `llama.cpp` (2598 файлов, 149 МБ; в CMake не собиралась), прототип `speech-decoder` (не компилировался) и скрипты интеграции с локальными путями.
+- **Временные метки:** конец реплики раньше считался как начало последнего токена + 80 мс, и реплика обрезалась на длительность последнего слова. Теперь токен заканчивается там, где начинается следующий токен того же VAD-сегмента, а последний — где VAD фиксирует конец речи (`TokenTiming`, ограничение 80–1500 мс). Unit-тест: `TokenTimingTest`.
+- **Скорость:** в Room добавлена колонка `processing_ms` (миграция 10→11). Карточка записи показывает «Обработано за X с · RTF Y», в logcat пишется строка с RTF.
+- **Release-сборка:** добавлены keep-правила R8 для sherpa-onnx и ONNX Runtime (JNI ищет поля и классы по имени, без правил распознавание в release упало бы). Release подписывается debug-ключом, если не задан свой. Выбор ABI: `-Plazure.abis=arm64-v8a`.
+- **CI:** исправлены версия NDK (27.1, как в сборке), пути к APK; добавлены самотест скрипта оценки и ручная сборка с моделями.
+- **Оценка:** `tools/eval/evaluate.py` считает WER, cpWER, DER, ошибки границ и RTF по JSON в формате конкурса.
+- Проверка: `assembleDebug`, `assembleRelease -Plazure.abis=arm64-v8a`, `compileDebugAndroidTestKotlin` собираются; `testDebugUnitTest` — 53 теста, 0 ошибок. На устройстве после этих правок приложение ещё не запускалось.
+
