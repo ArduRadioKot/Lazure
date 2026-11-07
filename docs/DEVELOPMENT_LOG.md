@@ -43,7 +43,7 @@ Updated: 2026-11-07
 
 ## Next actions
 
-1. Select and integrate an Android ARM64 offline ASR/diarization runtime, acquire/verify redistributable model artifacts and implement a real end-to-end transcript pass. Candidate review is documented in `docs/TRANSCRIPTION_STATUS.md`.
+1. Select and integrate an Android ARM64 offline ASR/diarization runtime, acquire/verify redistributable model artifacts and implement a real end-to-end transcript pass. Candidate review was documented in `docs/TRANSCRIPTION_STATUS.md` (removed once the pipeline was implemented).
 2. Move microphone capture into a foreground service with persistent notification and recovery after lifecycle/process interruption, then exercise capture with a real microphone.
 3. Finish Vault actions (rename/delete confirmation, sort and retry/reprocess), transcript editing and speaker metadata controls; then implement persisted summaries and recording-scoped chat/RAG.
 
