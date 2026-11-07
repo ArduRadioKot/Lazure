@@ -42,7 +42,7 @@ object SpeechModelPaths {
 
 /** MediaCodec based AudioDecoder + AudioPreprocessor: any Android-decodable file → mono 16 kHz PCM16. */
 class MediaCodecAudioDecoder {
-    suspend fun decode16kMono(path: String, onProgress: (Float) -> Unit = {}): ShortArray {
+    suspend fun decode16kMono(path: String, dir: java.io.File, name: String, onProgress: (Float) -> Unit = {}): Pcm {
         val extractor = MediaExtractor()
         extractor.setDataSource(path)
         val track = (0 until extractor.trackCount).firstOrNull {
@@ -59,12 +59,8 @@ class MediaCodecAudioDecoder {
         var channels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
         var floatPcm = false
         val resampler = StreamingResampler()
-        var out = ShortArray(SpeechModelPaths.SAMPLE_RATE * 60)
-        var outLen = 0
-        fun push(sample: Short) {
-            if (outLen == out.size) out = out.copyOf(out.size * 2)
-            out[outLen++] = sample
-        }
+        val writer = Pcm.writer(dir, name)
+        fun push(sample: Short) = writer.write(sample)
         val info = MediaCodec.BufferInfo()
         var inputDone = false
         var outputDone = false
@@ -118,11 +114,14 @@ class MediaCodecAudioDecoder {
                     }
                 }
             }
+        } catch (t: Throwable) {
+            writer.close(); throw t
         } finally {
             runCatching { codec.stop() }; codec.release(); extractor.release()
         }
-        require(outLen > 0) { "Decoded audio is empty" }
-        return out.copyOf(outLen)
+        val pcm = writer.finish()
+        require(pcm.size > 0) { "Decoded audio is empty" }
+        return pcm
     }
 }
 
@@ -243,7 +242,7 @@ class SpeechPipeline(private val context: Context) {
     private val decoder = MediaCodecAudioDecoder()
     private companion object {
         const val MAX_SIMULTANEOUS = 4
-        const val MIN_TOKEN_MS = TokenTiming.MIN_TOKEN_MS
+                const val MIN_TOKEN_MS = TokenTiming.MIN_TOKEN_MS
         fun tokenEnd(startMs: Long, nextStartMs: Long) = TokenTiming.endMs(startMs, nextStartMs)
     }
 
@@ -260,12 +259,14 @@ class SpeechPipeline(private val context: Context) {
     ): List<PipelineSegment> {
         check(modelsAvailable()) { "Speech models are missing from the APK" }
         onProgress("decode", 0f)
-        var pcm: ShortArray? = decoder.decode16kMono(audioPath) { onProgress("decode", it) }
-        android.util.Log.i("SpeechPipeline", "decoded ${pcm!!.size} samples (${pcm!!.size * 2 / 1_000_000} MB PCM16)")
+        val work = java.io.File(context.cacheDir, "speech_work").also { it.deleteRecursively(); it.mkdirs() }
+        val stores = ArrayList<Pcm>()
+        try {
+        val pcm = decoder.decode16kMono(audioPath, work, "pcm.raw") { onProgress("decode", it) }.also { stores += it }
+        android.util.Log.i("SpeechPipeline", "decoded ${pcm.size} samples (${pcm.size * 2 / 1_000_000} MB PCM16, on disk)")
 
         onProgress("enhance", 0f)
-        val (samples, vadSignal, diarSignal) = enhance(pcm!!, options) { onProgress("enhance", it) }
-        pcm = null   // release the decoded copy; only the three processed signals stay (PCM16)
+        val (samples, vadSignal, diarSignal) = enhance(pcm, work, stores, options) { onProgress("enhance", it) }
 
         onProgress("vad", 0f)
         val utterances = detectSpeech(vadSignal, samples, options.vadThreshold)
@@ -279,10 +280,10 @@ class SpeechPipeline(private val context: Context) {
             val noTimestamps = ArrayList<PipelineSegment>()
             utterances.forEachIndexed { i, seg ->
                 if (isCancelled()) error("cancelled")
-                val r = recognizeSamples(recognizer!!, seg.samples)
+                val r = recognizeSamples(recognizer!!, seg.samples())
                 val startMs = seg.start * 1000 / SpeechModelPaths.SAMPLE_RATE
-                val durMs = seg.samples.size * 1000L / SpeechModelPaths.SAMPLE_RATE
-                android.util.Log.i("SpeechPipeline", "asr[$i] ${seg.samples.size} -> '${r.text.trim()}'")
+                val durMs = seg.size * 1000L / SpeechModelPaths.SAMPLE_RATE
+                android.util.Log.i("SpeechPipeline", "asr[$i] ${seg.size} -> '${r.text.trim()}'")
                 if (r.text.isNotBlank()) {
                     if (r.tokens.isNotEmpty() && r.timestamps.size == r.tokens.size) {
                         // CTC reports when a token starts. A token ends where the next one starts; the last one ends where
@@ -299,7 +300,7 @@ class SpeechPipeline(private val context: Context) {
             if (tokens.isEmpty() && noTimestamps.isEmpty()) return emptyList()
 
             onProgress("diarization", 0f)
-            val turns = diarize(DspChain.floats(diarSignal), options.diarThreshold, options.numSpeakers) { onProgress("diarization", it) }
+            val turns = diarizeChunked(diarSignal, options.diarThreshold, options.numSpeakers) { onProgress("diarization", it) }
             val diarRegions = overlapRegions(turns)
             if (samples.size <= 120 * 16000) android.util.Log.i("SpeechPipeline", "turns: " + turns.sortedBy { it.start }.joinToString(" ") { "${it.speaker}:${"%.1f".format(it.start)}-${"%.1f".format(it.end)}" })
             val overlapS = overlapSeconds(turns)
@@ -361,9 +362,14 @@ class SpeechPipeline(private val context: Context) {
 
             onProgress("align", 0f)
             val all = ArrayList<Tok>()
-            for (t in tokens) {
-                if (replaced.any { t.ms in it }) continue            // words inside a separated region come from the separated streams
-                all += t.copy(speaker = units?.let { u -> speakerFromUnits(u, t.ms) } ?: speakerAt(turns, t.ms))
+            // A word is never split between two speakers: all its pieces go to whoever owns the word's middle. A cut found by
+            // the diarizer or a dash lands a little off the real onset, and the first letter of a reply used to stay behind
+            // with the previous speaker.
+            for (w in wordsOf(tokens.sortedBy { it.ms })) {
+                if (replaced.any { r -> w.first().ms in r }) continue   // words inside a separated region come from the separated streams
+                val mid = (w.first().ms + w.last().ms) / 2
+                val spk = units?.let { u -> speakerFromUnits(u, mid) } ?: speakerAt(turns, mid)
+                for (t in w) all += t.copy(speaker = spk)
             }
             all += separated
             val out = groupTokens(all)
@@ -371,6 +377,7 @@ class SpeechPipeline(private val context: Context) {
             val merged = mergeAdjacent(out.filter { it.text.isNotBlank() }.sortedBy { it.startMs }, durationLimitMs = audioDurationMs(samples))
             return markOverlaps(merged, regions)
         } finally { recognizer?.release() }
+        } finally { stores.forEach { runCatching { it.close() } }; work.deleteRecursively() }
     }
 
     private fun newRecognizer() = OfflineRecognizer(context.assets, OfflineRecognizerConfig(
@@ -394,7 +401,11 @@ class SpeechPipeline(private val context: Context) {
     private data class Tok(val ms: Long, val text: String, val speaker: Int, val endMs: Long = ms + MIN_TOKEN_MS)
 
     /** A VAD segment: audio cut from the ASR signal with padding, plus the end of the detected speech itself. */
-    private class VadSegment(val start: Long, val samples: FloatArray, val speechEndMs: Long)
+    private class VadSegment(val start: Long, private val src: Pcm, private val from: Int, private val to: Int, val speechEndMs: Long) {
+        val size: Int get() = to - from
+        /** Converted on demand: a long recording has thousands of segments and must not hold them all as floats. */
+        fun samples(): FloatArray = src.floats(from, to)
+    }
     private data class SpeakerUnit(val startMs: Long, val endMs: Long, val speaker: Int)
 
     private fun speakerFromUnits(units: List<SpeakerUnit>, ms: Long): Int? {
@@ -421,7 +432,7 @@ class SpeechPipeline(private val context: Context) {
      * separation stage and the output, so there is a single id space (the diarizer's ids are only used to find overlaps).
      */
     private fun refineSpeakers(
-        samples: ShortArray, tokens: List<Tok>, options: PipelineOptions, diarizerCount: Int,
+        samples: Pcm, tokens: List<Tok>, options: PipelineOptions, diarizerCount: Int,
         turns: List<com.k2fsa.sherpa.onnx.OfflineSpeakerDiarizationSegment>, segmentStartsMs: List<Long>,
     ): Refined? {
         if (tokens.size < 2) return null
@@ -452,7 +463,7 @@ class SpeechPipeline(private val context: Context) {
             fun norm(v: FloatArray): FloatArray { val n = Math.sqrt(v.sumOf { (it * it).toDouble() }).toFloat() + 1e-9f; return FloatArray(v.size) { v[it] / n } }
             fun dot(a: FloatArray, b: FloatArray): Float { var d = 0f; for (i in a.indices) d += a[i] * b[i]; return d }
             fun embedSpan(a: Long, b: Long): FloatArray? =
-                matcher.embedShort(DspChain.floats(samples, (a * 16).toInt(), minOf((b * 16).toInt(), (a * 16).toInt() + 15 * 16000)))?.let { norm(it) }
+                matcher.embedShort(samples.floats((a * 16).toInt(), minOf((b * 16).toInt(), (a * 16).toInt() + 15 * 16000)))?.let { norm(it) }
             // 2) verified cuts inside a unit. A piece of at least a second on both sides must sound like two different people
             // (similarity < 0.55 for a diarizer cut, < 0.65 for a dash); next to a reply shorter than a second the embedding
             // is useless and the cut is taken on the evidence of the cue alone.
@@ -487,7 +498,7 @@ class SpeechPipeline(private val context: Context) {
             val emb = units.mapIndexed { i, u ->
                 if (len[i] < 500) null else {
                     val from = (u.start * 16).toInt(); val to = minOf((u.end * 16).toInt(), from + 15 * 16000)
-                    matcher.embedShort(DspChain.floats(samples, from, to))?.let { norm(it) }
+                    matcher.embedShort(samples.floats(from, to))?.let { norm(it) }
                 }
             }
             val confident = units.indices.filter { len[it] >= 1000 && emb[it] != null }
@@ -640,6 +651,18 @@ class SpeechPipeline(private val context: Context) {
     }
 
     /** Groups tokens per speaker (so simultaneous speakers do not interleave): break on >1 s silence or 30 s length. */
+    /** Pieces that make one word: a piece starting with the word marker opens a new word, a dash stands alone. */
+    private fun wordsOf(sorted: List<Tok>): List<List<Tok>> {
+        val out = ArrayList<List<Tok>>(); var cur = ArrayList<Tok>()
+        for (t in sorted) {
+            val dash = t.text.replace("▁", "").trim().let { it == "—" || it == "-" || it == "–" }
+            if (cur.isNotEmpty() && (t.text.startsWith("▁") || t.text.startsWith(" ") || dash || cur.last().text.replace("▁", "").trim().let { it == "—" || it == "-" || it == "–" })) { out += cur; cur = ArrayList() }
+            cur += t
+        }
+        if (cur.isNotEmpty()) out += cur
+        return out
+    }
+
     private fun groupTokens(all: List<Tok>): ArrayList<PipelineSegment> {
         val out = ArrayList<PipelineSegment>()
         for ((spk, toks) in all.groupBy { it.speaker }) {
@@ -743,7 +766,7 @@ class SpeechPipeline(private val context: Context) {
 
     /** Separates one overlapped region into one source per speaker and labels each source with a speaker, or null. */
     private fun separateRegion(
-        sep: OverlapSeparator, samples: ShortArray,
+        sep: OverlapSeparator, samples: Pcm,
         activeAt: (Int, Float) -> Boolean, r: Region,
         matcher: SpeakerMatcher?, refs: Map<Int, FloatArray>,
     ): SeparatedRegion? {
@@ -751,7 +774,7 @@ class SpeechPipeline(private val context: Context) {
         val s0 = ((r.startMs - margin).coerceAtLeast(0) * 16).toInt()
         val s1 = (((r.endMs + margin) * 16).toInt()).coerceAtMost(samples.size)
         if (s1 - s0 < 1600) return null
-        val mix = DspChain.floats(samples, s0, s1)
+        val mix = samples.floats(s0, s1)
         val src = splitSources(sep, mix, r.spk.size, matcher, refs).toTypedArray()
         val n = src.size
         // Which source is which speaker? 1) embeddings vs references from clean speech (best injective assignment over
@@ -798,7 +821,7 @@ class SpeechPipeline(private val context: Context) {
 
     /** Per-speaker reference embedding from up to 12 s of that speaker's speech outside every overlap region. */
     private fun referenceEmbeddings(
-        m: SpeakerMatcher, samples: ShortArray,
+        m: SpeakerMatcher, samples: Pcm,
         turns: List<com.k2fsa.sherpa.onnx.OfflineSpeakerDiarizationSegment>, regions: List<Region>,
     ): Map<Int, FloatArray> {
         val needed = turns.map { it.speaker }.toSet()   // all speakers: diarization may label an overlap with the wrong pair
@@ -809,7 +832,7 @@ class SpeechPipeline(private val context: Context) {
                 val a = (t.start * 1000).toLong(); val b = (t.end * 1000).toLong()
                 if (regions.any { a < it.endMs && b > it.startMs }) continue          // clean turns only
                 if (turns.any { it.speaker != spk && it.start < t.end && it.end > t.start }) continue
-                val seg = DspChain.floats(samples, (t.start * 16000).toInt(), (t.end * 16000).toInt())
+                val seg = samples.floats((t.start * 16000).toInt(), (t.end * 16000).toInt())
                 chunks += seg; total += seg.size
                 if (total >= 12 * 16000) break
             }
@@ -844,28 +867,48 @@ class SpeechPipeline(private val context: Context) {
      * detection. Diarization gets the HPF-only signal: speaker embeddings over-split (4 clusters instead of 2 on the
      * test clip) after loudness normalisation and compression.
      */
-    private fun enhance(pcm: ShortArray, o: PipelineOptions, onProgress: (Float) -> Unit): Triple<ShortArray, ShortArray, ShortArray> {
-        val hp = DspChain.highPass(pcm)
-        val asr = if (o.normalize) DspChain.normalizeCompress(hp) else hp
+    private fun enhance(pcm: Pcm, work: java.io.File, stores: MutableList<Pcm>, o: PipelineOptions, onProgress: (Float) -> Unit): Triple<Pcm, Pcm, Pcm> {
+        // Every stage streams from one file on disk to the next in 60 s chunks, so memory does not depend on length.
+        val hp = Pcm.writer(work, "hp.raw").let { w -> DspChain.stream(pcm, w, HighPassFilter()::process); w.finish() }.also { stores += it }
+        pcm.close(); stores.remove(pcm)
+        val asr = if (o.normalize) Pcm.writer(work, "asr.raw").let { w -> DspChain.stream(hp, w, *DspChain.normalizeBlocks()); w.finish() }.also { stores += it } else hp
         if (!o.denoise || !SpeechModelPaths.assetExists(context, SpeechModelPaths.DTLN_1)) return Triple(asr, asr, hp)
-        val den = runCatching { DtlnDenoiser(context).use { it.process(hp, onProgress) } }
-            .onFailure { android.util.Log.e("SpeechPipeline", "DTLN failed, continuing without it", it) }
-            .getOrNull() ?: return Triple(asr, asr, hp)
         // Full DTLN suppresses quiet words and soft onsets together with the noise, and the speech detector then never sees
-        // them. A dry/wet mix keeps most of the noise reduction and leaves those words audible to it.
-        val mixed = if (o.denoiseStrength >= 0.999f) den else ShortArray(hp.size) { i ->
-            val w = if (i < den.size) den[i].toInt() else hp[i].toInt()
-            (hp[i] + (w - hp[i]) * o.denoiseStrength).toInt().coerceIn(-32768, 32767).toShort()
-        }
-        return Triple(asr, if (o.normalize) DspChain.normalizeCompress(mixed) else mixed, hp)
+        // them. A dry/wet mix keeps most of the noise reduction and leaves those words audible to it. DTLN runs on 5-minute
+        // pieces with fresh state each (the speech detector is the only consumer, so a seam does no harm).
+        val vad = runCatching {
+            DtlnDenoiser(context).use { dtln ->
+                val w = Pcm.writer(work, "vad.raw")
+                val norm = if (o.normalize) DspChain.normalizeBlocks() else emptyArray()
+                val piece = 300 * SpeechModelPaths.SAMPLE_RATE
+                var pos = 0
+                while (pos < hp.size) {
+                    val end = minOf(hp.size, pos + piece)
+                    val dry = hp.shorts(pos, end)
+                    val den = dtln.process(dry)
+                    val chunk = FloatArray(dry.size) { i ->
+                        val d = dry[i].toInt(); val wv = if (i < den.size) den[i].toInt() else d
+                        (d + (wv - d) * o.denoiseStrength).coerceIn(-32768f, 32767f) / 32768f
+                    }
+                    for (b in norm) b(chunk)
+                    w.write(ShortArray(chunk.size) { (chunk[it] * 32767f).toInt().coerceIn(-32768, 32767).toShort() })
+                    pos = end
+                    onProgress(pos.toFloat() / hp.size)
+                }
+                w.finish()
+            }
+        }.onFailure { android.util.Log.e("SpeechPipeline", "DTLN failed, continuing without it", it) }.getOrNull()
+            ?: return Triple(asr, asr, hp)
+        stores += vad
+        return Triple(asr, vad, hp)
     }
 
-    private fun audioDurationMs(samples: ShortArray) = samples.size * 1000L / SpeechModelPaths.SAMPLE_RATE
+    private fun audioDurationMs(samples: Pcm) = samples.size * 1000L / SpeechModelPaths.SAMPLE_RATE
 
     private fun threads() = (Runtime.getRuntime().availableProcessors() - 1).coerceIn(1, 4)
 
     /** VAD runs on [vadSignal]; returned segments carry audio cut from [asrSignal] at the same sample positions. */
-    private fun detectSpeech(vadSignal: ShortArray, asrSignal: ShortArray, threshold: Float): List<VadSegment> {
+    private fun detectSpeech(vadSignal: Pcm, asrSignal: Pcm, threshold: Float): List<VadSegment> {
         val vad = Vad(context.assets, VadModelConfig(
             sileroVadModelConfig = SileroVadModelConfig(
                 model = SpeechModelPaths.VAD, threshold = threshold, minSilenceDuration = 0.4f,
@@ -883,12 +926,17 @@ class SpeechPipeline(private val context: Context) {
                     vad.pop()
                 }
             }
-            var i = 0
-            while (i < vadSignal.size) {
-                val end = min(i + window, vadSignal.size)
-                vad.acceptWaveform(DspChain.floats(vadSignal, i, end))
-                drain()
-                i = end
+            var base = 0
+            while (base < vadSignal.size) {
+                val block = vadSignal.floats(base, base + 60 * SpeechModelPaths.SAMPLE_RATE)
+                var i = 0
+                while (i < block.size) {
+                    val end = min(i + window, block.size)
+                    vad.acceptWaveform(block.copyOfRange(i, end))
+                    drain()
+                    i = end
+                }
+                base += block.size
             }
             vad.flush()
             drain()
@@ -903,9 +951,32 @@ class SpeechPipeline(private val context: Context) {
             val st = r.first - minOf(4000, maxOf(0, gapBefore / 2))
             val en = r.first + r.second + minOf(2400, maxOf(0, gapAfter / 2))
             val speechEndMs = (r.first + r.second).toLong() * 1000 / SpeechModelPaths.SAMPLE_RATE
-            result += VadSegment(st.toLong(), DspChain.floats(asrSignal, st.coerceIn(0, asrSignal.size), en.coerceIn(0, asrSignal.size)), speechEndMs)
+            result += VadSegment(st.toLong(), asrSignal, st.coerceIn(0, asrSignal.size), en.coerceIn(0, asrSignal.size), speechEndMs)
         }
         return result
+    }
+
+    /**
+     * The diarizer's memory and time grow quickly with length, so a long recording goes through it in 6-minute pieces.
+     * Ids are made unique per piece (piece * 100 + id): they are only used to find overlaps and speaker changes, the
+     * final speakers come from the embedding clustering over the whole file.
+     */
+    private fun diarizeChunked(signal: Pcm, threshold: Float, numSpeakers: Int, onProgress: (Float) -> Unit): List<com.k2fsa.sherpa.onnx.OfflineSpeakerDiarizationSegment> {
+        val chunk = 360 * SpeechModelPaths.SAMPLE_RATE
+        if (signal.size <= chunk * 3 / 2) return diarize(signal.floats(), threshold, numSpeakers, onProgress)
+        val pieces = (signal.size + chunk - 1) / chunk
+        val out = ArrayList<com.k2fsa.sherpa.onnx.OfflineSpeakerDiarizationSegment>()
+        for (k in 0 until pieces) {
+            val a = k * chunk; val b = minOf(signal.size, a + chunk)
+            if (b - a < 2 * SpeechModelPaths.SAMPLE_RATE) continue
+            val offset = a.toFloat() / SpeechModelPaths.SAMPLE_RATE
+            diarize(signal.floats(a, b), threshold, numSpeakers) { }.forEach {
+                out += com.k2fsa.sherpa.onnx.OfflineSpeakerDiarizationSegment(it.start + offset, it.end + offset, k * 100 + it.speaker, it.confidence)
+            }
+            onProgress((k + 1f) / pieces)
+        }
+        android.util.Log.i("SpeechPipeline", "diarized in $pieces pieces")
+        return out
     }
 
     private fun diarize(samples: FloatArray, threshold: Float, numSpeakers: Int, onProgress: (Float) -> Unit): List<com.k2fsa.sherpa.onnx.OfflineSpeakerDiarizationSegment> {

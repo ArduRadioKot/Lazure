@@ -92,8 +92,11 @@ object DspChain {
     const val CHUNK = 320 * 3000 // 60 s at 16 kHz, a whole number of 20 ms frames
 
     /** Runs [blocks] in order over [pcm] chunk by chunk and returns a new PCM16 array. */
-    fun run(pcm: ShortArray, vararg blocks: (FloatArray) -> Unit): ShortArray {
-        val out = ShortArray(pcm.size)
+    fun run(pcm: ShortArray, vararg blocks: (FloatArray) -> Unit): ShortArray = run(pcm, false, *blocks)
+
+    /** With [inPlace] the result overwrites [pcm] (every chunk is read before it is written), saving a copy on long files. */
+    fun run(pcm: ShortArray, inPlace: Boolean, vararg blocks: (FloatArray) -> Unit): ShortArray {
+        val out = if (inPlace) pcm else ShortArray(pcm.size)
         val buf = FloatArray(minOf(CHUNK, pcm.size))
         var pos = 0
         while (pos < pcm.size) {
@@ -107,7 +110,9 @@ object DspChain {
         return out
     }
 
-    fun highPass(pcm: ShortArray): ShortArray = HighPassFilter().let { hp -> run(pcm, hp::process) }
+    fun highPass(pcm: ShortArray, inPlace: Boolean = false): ShortArray = HighPassFilter().let { hp -> run(pcm, inPlace, hp::process) }
+
+    fun normalizeBlocks(): Array<(FloatArray) -> Unit> { val n = RmsNormalizer(); val c = CompressorLimiter(); return arrayOf(n::process, c::process) }
 
     fun normalizeCompress(pcm: ShortArray): ShortArray {
         val n = RmsNormalizer(); val c = CompressorLimiter()
@@ -119,4 +124,20 @@ object DspChain {
         val a = from.coerceIn(0, pcm.size); val b = to.coerceIn(a, pcm.size)
         return FloatArray(b - a) { pcm[a + it] / 32768f }
     }
+
+    /** Streams [src] through [blocks] into [dst], one 60 s chunk at a time (the blocks keep their state between chunks). */
+    fun stream(src: Pcm, dst: Pcm.Writer, vararg blocks: (FloatArray) -> Unit, onProgress: (Float) -> Unit = {}) {
+        var pos = 0
+        while (pos < src.size) {
+            val n = minOf(CHUNK, src.size - pos)
+            val chunk = src.floats(pos, pos + n)
+            for (b in blocks) b(chunk)
+            val out = ShortArray(n) { (chunk[it] * 32767f).toInt().coerceIn(-32768, 32767).toShort() }
+            dst.write(out)
+            pos += n
+            onProgress(pos.toFloat() / src.size)
+        }
+    }
+
+    fun floats(pcm: Pcm, from: Int = 0, to: Int = pcm.size): FloatArray = pcm.floats(from, to)
 }

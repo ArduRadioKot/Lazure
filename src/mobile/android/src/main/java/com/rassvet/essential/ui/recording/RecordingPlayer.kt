@@ -80,10 +80,18 @@ object WaveformPeaks {
     suspend fun load(audioPath: String): FloatArray = withContext(Dispatchers.IO) {
         val cache = File("$audioPath.peaks")
         if (cache.isFile && cache.length() == BINS.toLong()) return@withContext cache.readBytes().let { b -> FloatArray(BINS) { (b[it].toInt() and 0xFF) / 255f } }
-        val pcm = MediaCodecAudioDecoder().decode16kMono(audioPath)
+        val dir = File(File(audioPath).parentFile, ".wave").also { it.mkdirs() }
         val peaks = FloatArray(BINS)
-        val per = maxOf(1, pcm.size / BINS)
-        for (i in pcm.indices) { val b = minOf(BINS - 1, i / per); val v = abs(pcm[i].toInt()) / 32768f; if (v > peaks[b]) peaks[b] = v }
+        MediaCodecAudioDecoder().decode16kMono(audioPath, dir, "wave.raw").use { pcm ->
+            val per = maxOf(1, pcm.size / BINS)
+            var base = 0
+            while (base < pcm.size) {
+                val block = pcm.floats(base, base + 160_000)
+                for (i in block.indices) { val bin = minOf(BINS - 1, (base + i) / per); val v = abs(block[i]); if (v > peaks[bin]) peaks[bin] = v }
+                base += block.size
+            }
+        }
+        dir.deleteRecursively()
         val max = (peaks.maxOrNull() ?: 1f).coerceAtLeast(0.05f)
         for (i in peaks.indices) peaks[i] = (peaks[i] / max).coerceIn(0f, 1f)
         runCatching { cache.writeBytes(ByteArray(BINS) { (peaks[it] * 255).toInt().toByte() }) }
