@@ -1,4 +1,4 @@
-name: Android build (debug APK + native libs)
+name: Android build and tests
 
 on:
   push:
@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      with_models:
+        description: "Download speech models and the bundled LLM, then build an arm64 release APK (~1 GB)"
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -15,86 +20,55 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 1
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
-      - name: Set up Gradle cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'gradle/libs.versions.toml') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install NDK and CMake
-        run: |
-          yes | sdkmanager --install "ndk;27.0.12077973" "cmake;3.22.1"
-          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> $GITHUB_ENV
+      - name: Install NDK and CMake (versions from src/mobile/android/build.gradle.kts)
+        run: yes | sdkmanager --install "platforms;android-36" "ndk;27.1.12297006" "cmake;3.22.1" > /dev/null
 
-      - name: Empty local.properties for CI
-        run: |
-          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-          echo "GEMINI_API_KEY=" >> local.properties
-          echo "OPENAI_COMPAT_API_KEY=" >> local.properties
-          echo "OPENAI_COMPAT_BASE_URL=" >> local.properties
-
-      - name: Make gradlew executable
-        run: chmod +x gradlew
-
-      - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
-
-      - name: Upload debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: essential-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-
-      - name: Upload libessential_llama.so per ABI
-        uses: actions/upload-artifact@v4
-        with:
-          name: essential-native-libs
-          path: |
-            app/build/intermediates/cxx/Debug/**/obj/**/libessential_llama.so
-            app/build/intermediates/stripped_native_libs/debug/out/lib/**/libessential_llama.so
-          if-no-files-found: warn
-
-  smoke-test:
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Empty local.properties for CI
+      - name: local.properties
         run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
-      - name: Make gradlew executable
-        run: chmod +x gradlew
+      - name: Evaluation script self-tests
+        run: python3 -m unittest discover -s tools/eval -v
 
-      - name: Run unit tests
-        run: ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      - name: Debug APK (no models; for UI and build checks)
+        if: ${{ !inputs.with_models }}
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Download models and bundled LLM
+        if: ${{ inputs.with_models }}
+        run: bash tools/models/fetch_models.sh
+
+      - name: Release APK with models (arm64-v8a)
+        if: ${{ inputs.with_models }}
+        run: ./gradlew :app:assembleRelease -Plazure.abis=arm64-v8a --stacktrace
+
+      - name: Upload unit test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-reports
+          path: src/mobile/android/build/reports/tests/testDebugUnitTest
+          if-no-files-found: ignore
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.with_models && 'lazure-release-arm64' || 'lazure-debug-no-models' }}
+          path: src/mobile/android/build/outputs/apk/*/*.apk
+          if-no-files-found: error

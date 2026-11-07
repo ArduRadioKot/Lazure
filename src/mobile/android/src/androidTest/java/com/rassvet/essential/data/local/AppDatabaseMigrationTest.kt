@@ -119,4 +119,23 @@ class AppDatabaseMigrationTest {
         db.query("SELECT text, overlap FROM transcript_segments").use { assertTrue(it.moveToFirst()); assertEquals("hi", it.getString(0)); assertEquals(0, it.getInt(1)) }
         helper.close()
     }
+
+    @Test
+    fun migration10To11AddsProcessingTimeWithZeroDefault() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val callback = object : SupportSQLiteOpenHelper.Callback(10) {
+            override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE recordings (id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, audio_path TEXT NOT NULL, duration_ms INTEGER NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL DEFAULT 0, processing_status TEXT NOT NULL, processing_progress INTEGER NOT NULL DEFAULT 0, language TEXT, selected_asr_model_id TEXT, selected_diarization_model_id TEXT)")
+                db.execSQL("INSERT INTO recordings (id, title, audio_path, duration_ms, created_at, processing_status) VALUES ('r','Cats','/a.wav',5000,1,'completed')")
+            }
+            override fun onUpgrade(db: androidx.sqlite.db.SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+        }
+        context.deleteDatabase("migration-10-test.db")
+        val helper = FrameworkSQLiteOpenHelperFactory().create(
+            SupportSQLiteOpenHelper.Configuration.builder(context).name("migration-10-test.db").callback(callback).build())
+        val db = helper.writableDatabase
+        AppDatabaseMigrations.MIGRATION_10_11.migrate(db)
+        db.query("SELECT title, processing_ms FROM recordings").use { assertTrue(it.moveToFirst()); assertEquals("Cats", it.getString(0)); assertEquals(0L, it.getLong(1)) }
+        helper.close()
+    }
 }

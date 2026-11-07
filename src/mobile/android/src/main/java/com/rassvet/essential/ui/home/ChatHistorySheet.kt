@@ -55,6 +55,14 @@ import com.rassvet.essential.R
 import com.rassvet.essential.ui.theme.EssentialBrand
 import com.rassvet.essential.ui.theme.LocalEssentialChrome
 
+
+/** One saved AI chat in the history sheet. */
+data class ChatSessionUi(
+    val id: Long,
+    val title: String,
+    val lastUpdatedAt: Long,
+)
+
 @Composable
 fun BoxScope.ChatHistorySheet(
     visible: Boolean,

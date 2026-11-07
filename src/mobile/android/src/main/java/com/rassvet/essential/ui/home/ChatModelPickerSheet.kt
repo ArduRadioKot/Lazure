@@ -199,30 +199,9 @@ fun BoxScope.ChatModelPickerSheet(
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    val cloud = options.filter { it.kind != ChatModelSelection.Kind.LocalModel }
-                    val local = options.filter { it.kind == ChatModelSelection.Kind.LocalModel }
-
-                    if (cloud.isNotEmpty()) {
-                        ModelSectionLabel(
-                            text = stringResource(R.string.chat_models_cloud),
-                            icon = LazureIcons.Cloud,
-                        )
-                        cloud.forEach { option ->
-                            CloudModelOptionRow(
-                                option = option,
-                                selected = option.id == selectedId,
-                                onClick = { onSelect(option) },
-                            )
-                        }
-                    }
+                    val local = options
 
                     if (local.isNotEmpty()) {
-                        if (cloud.isNotEmpty()) {
-                            HorizontalDivider(
-                                color = chrome.sheetBorder,
-                                modifier = Modifier.padding(vertical = 4.dp),
-                            )
-                        }
                         ModelSectionLabel(
                             text = stringResource(R.string.chat_models_local),
                             icon = LazureIcons.Memory,
@@ -295,45 +274,6 @@ private fun ModelSectionLabel(
             color = chrome.sheetMuted,
             style = MaterialTheme.typography.labelMedium,
         )
-    }
-}
-
-@Composable
-private fun CloudModelOptionRow(
-    option: ChatModelSelection.Option,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    ModelOptionShell(selected = selected, onClick = onClick, enabled = true) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = option.title,
-                    color = LocalEssentialChrome.current.sheetText,
-                    style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                option.subtitle?.let { sub ->
-                    Text(
-                        text = sub,
-                        color = LocalEssentialChrome.current.sheetMuted,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                }
-            }
-            if (selected) {
-                Icon(
-                    LazureIcons.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
     }
 }
 

@@ -29,6 +29,9 @@ interface RecordingDao {
     @Query("UPDATE recordings SET processing_status = :status, processing_progress = :progress, updated_at = :updatedAt WHERE id = :id")
     suspend fun updateStatus(id: String, status: String, progress: Int, updatedAt: Long): Int
 
+    @Query("UPDATE recordings SET processing_ms = :processingMs WHERE id = :id")
+    suspend fun setProcessingTime(id: String, processingMs: Long): Int
+
     @Query("SELECT * FROM recordings WHERE processing_status IN ('queued','processing')")
     suspend fun interrupted(): List<RecordingEntity>
 

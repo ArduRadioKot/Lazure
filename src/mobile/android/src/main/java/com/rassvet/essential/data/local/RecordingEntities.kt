@@ -18,6 +18,8 @@ data class RecordingEntity(
     val language: String? = null,
     @ColumnInfo(name = "selected_asr_model_id") val selectedAsrModelId: String? = null,
     @ColumnInfo(name = "selected_diarization_model_id") val selectedDiarizationModelId: String? = null,
+    /** Wall-clock time of the last successful transcription run (decode → export-ready segments), 0 if unknown. */
+    @ColumnInfo(name = "processing_ms", defaultValue = "0") val processingMs: Long = 0,
 )
 
 @Entity(

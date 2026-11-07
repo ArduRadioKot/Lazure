@@ -5,8 +5,6 @@ import com.rassvet.essential.data.chat.ChatEngine
 import com.rassvet.essential.data.index.IndexRepository
 import com.rassvet.essential.data.local.VaultPreferencesRepository
 import com.rassvet.essential.data.llm.HybridLocalLlmEngine
-import com.rassvet.essential.data.network.NetworkMonitor
-import com.rassvet.essential.data.network.OnlineChecker
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -38,9 +36,7 @@ object RepositoryModule {
     @Singleton
     fun provideChatEngine(
         @ApplicationContext context: Context,
-        prefs: VaultPreferencesRepository,
         index: IndexRepository,
         localEngine: HybridLocalLlmEngine,
-        networkMonitor: NetworkMonitor,
-    ): ChatEngine = ChatEngine(context, prefs, index, localEngine, networkMonitor)
+    ): ChatEngine = ChatEngine(context, index, localEngine)
 }

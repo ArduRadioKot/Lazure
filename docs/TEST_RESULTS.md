@@ -1,18 +1,83 @@
 # Методика и результаты тестирования
 
-## 2026-11-07
+## Метрики
 
-- Baseline `./gradlew :app:assembleDebug`: passed before edits.
-- Updated `./gradlew :app:assembleDebug`: passed after Room migration, Home/Vault shell, filters/sorting, transcript/speaker editing, model catalog and microphone capture UI changes.
-- Updated `./gradlew :app:testDebugUnitTest`: passed, 44 tests.
-- Updated `./gradlew :app:connectedDebugAndroidTest`: passed, 4 tests on `processing-phone` API 33 emulator. Covers app package and Room migration/data preservation through 7 → 8.
-- Debug APK installed, and `adb shell am start -n ru.myessentiality.essential/com.rassvet.essential.MainActivity` opened the application. Audio import and microphone capture were not exercised end to end with real media.
-- Added `TranscriptExportTest` for exact competition keys, empty export, and invalid/out-of-order timestamps.
-- No UI automation for the new Home/Vault/Live screens, no model inference, and no WER/DER/RTF measurement was performed.
+Эксперты оценивают точность транскрибации (WER), диаризации, временных меток и время обработки (RTF). Мы считаем те же величины скриптом [`tools/eval/evaluate.py`](../tools/eval/evaluate.py). Ему нужны только стандартная библиотека Python и JSON в формате конкурса с обеих сторон.
 
-## UI/UX polish — latest verification, 2026-11-07
+| Метрика | Что измеряет |
+|---|---|
+| **WER** | Ошибки слов во всём разговоре. Текст в нижнем регистре, `ё → е`, без пунктуации |
+| **WER_raw** | То же без нормализации: показывает, сколько дают пунктуация и регистр |
+| **cpWER** | WER по говорящим при лучшем сопоставлении: учитывает и распознавание, и приписывание слов не тому говорящему |
+| **DER** | (пропуск речи + ложная речь + путаница говорящих) / длительность эталонной речи; кадры 10 мс, коллар 0,25 с |
+| **start/end MAE** | Средняя абсолютная ошибка начала и конца реплики для пар с IoU ≥ 0,5 |
+| **within500** | Доля таких реплик, у которых обе границы точнее 500 мс |
+| **RTF** | Время обработки / длительность аудио. Время показывается в карточке записи и пишется в logcat (`RecordingProcessor`) |
 
-- `./gradlew :app:assembleDebug :app:testDebugUnitTest`: passed, **59 tests**, 0 failures/errors. Seven Compose UI tests cover Home/navigation in light/dark at 320 dp with fontScale 1.0/1.6, large-font chat headers and settings. ColorContrastTest checks seven static-theme text pairs at >= 4.5:1.
-- `./gradlew :app:connectedDebugAndroidTest`: passed, **9 tests**, 0 failures on ARM64 processing-phone / Android 13 API 33. Four actual Compose viewport cases and a Hilt-backed MainActivity smoke test cover existing Home, Archive, Chat, Settings, PIN setup, Models and Live screens. Existing DB migrations/package tests remain green.
-- Native screenshots and visual review: `docs/ui-polish/`; full scope and changed files: `docs/UI_POLISH_REPORT.md`.
-- Font scaling is applied to Compose density in tests; this is not a claim that every physical-device font/display setting has been tested. Tests open the recording screen but do not record microphone audio or benchmark ASR.
+Порядок прогона:
+
+1. Положите эталонные JSON в `refs/`. Имена файлов должны совпадать с именами аудио.
+2. Импортируйте аудио в приложение и дождитесь обработки.
+3. Экспортируйте JSON каждой записи в `exports/`.
+4. Внесите время обработки из карточки в `timing.csv` (`file,audio_sec,processing_sec`).
+5. Запустите:
+
+   ```bash
+   python3 tools/eval/evaluate.py --ref refs/ --hyp exports/ --timing timing.csv --csv artifacts/test-results/results.csv
+   ```
+
+## Автоматические тесты
+
+| Набор | Команда | Последний результат |
+|---|---|---|
+| Unit-тесты (JVM + Robolectric) | `./gradlew :app:testDebugUnitTest` | **53 теста, 0 ошибок** (2026-11-07, после удаления облачного кода) |
+| Самотест скрипта оценки | `python3 -m unittest discover -s tools/eval` | **10 тестов, 0 ошибок** |
+| Сборка | `./gradlew :app:assembleDebug`, `:app:assembleRelease -Plazure.abis=arm64-v8a` | Обе собираются; release подписан, классы sherpa-onnx не переименованы R8 |
+| Инструментальные тесты | `./gradlew :app:connectedDebugAndroidTest` | Компилируются. Последний прогон на эмуляторе ARM64 / API 33 — до текущих правок (9 тестов, 0 ошибок); новый тест миграции 10→11 на устройстве ещё не запускался |
+
+Что покрывают unit-тесты:
+
+- `TranscriptExportTest` — точная схема JSON, пустой экспорт, отказ на неупорядоченных или некорректных метках;
+- `TokenTimingTest` — конец токена по следующему токену или концу речи, ограничения длительности;
+- `RecordingProcessingStatusTest` — допустимые переходы статусов;
+- `RecordingAiTest` — таймкоды и поиск фрагментов для вопросов к LLM;
+- `ThinkFilterTest`, `LlamaRuntimeTuningTest` — подготовка ответа и параметров LLM;
+- `PinRepositoryTest`, `ColorContrastTest`, `HomePolishTest`, `MarkdownParserTest` и др. — PIN, контраст темы, вёрстка, разметка.
+
+`SpeechPipelineDeviceTest` (инструментальный) прогоняет пайплайн на файлах из `files/eval` устройства и пишет результат в logcat (`SPEECH_EVAL`).
+
+## Результаты на собственных данных
+
+### Диаризация: синтетический бенчмарк
+
+Данные — [`tools/bench`](../tools/bench): четыре русских диалога с известной разметкой, голоса — одна TTS-модель со сдвигом высоты. Такие голоса похожи сильнее, чем голоса двух реальных людей. Метрика — доля эталонной речи с правильным говорящим при лучшем сопоставлении. Прогон на эмуляторе ARM64.
+
+| Диалог | До уточнения говорящих | После |
+|---|---|---|
+| `rapid3` — 3 голоса, паузы 0,05–0,3 с, односложные ответы | 82,0 % | 94,3 % |
+| `mixed3` | 81,5 % | 90,4 % |
+| `dialog2` — 2 голоса | — | 97,4 % |
+| `long2` — длинные реплики | — | 99,6 % |
+| **Всего** | **91,4 %** | **96,6 %** |
+
+На распознанной речи говорящий указан верно в 98,7 % случаев. Остаток — пропущенные односложные ответы и реплики 0,4–0,7 с.
+
+### Скорость: эмулятор ARM64, debug-сборка
+
+| Сценарий | Результат |
+|---|---|
+| 20 минут русской речи (163 фразы) | 126,5 с, **RTF 0,10**, без нехватки памяти |
+| 31 с, три голоса одновременно, с разделением MossFormer2 | ~72 с (разделение ≈ RTF 4 на участке наложения) |
+| LLM Qwen3 0.6B INT4, CPU: вопрос по записи / краткое содержание (136 токенов) | 4,9 с / 7,5 с |
+
+Это замеры на эмуляторе. Телефоны и release-сборку ещё нужно измерить.
+
+### WER, DER, точность меток на реальных записях
+
+**Не измерено.** Размеченного набора реальных русских диалогов у нас пока нет. Таблицу ниже нужно заполнить выводом `tools/eval/evaluate.py` на телефоне, на release-сборке:
+
+| Набор | WER | cpWER | DER | start/end MAE, мс | RTF | Устройство |
+|---|---|---|---|---|---|---|
+| — | — | — | — | — | — | — |
+
+Подробная история замеров и найденных причин ошибок: [DEVELOPMENT_LOG.md](DEVELOPMENT_LOG.md).

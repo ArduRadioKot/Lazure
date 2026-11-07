@@ -44,6 +44,7 @@ object RecordingProcessor {
         if (!pipeline.modelsAvailable()) { status("failed", 0); return }
         try {
             status("processing", 1)
+            val startedAt = android.os.SystemClock.elapsedRealtime()
             val weights = mapOf("decode" to (0 to 8), "enhance" to (8 to 20), "vad" to (20 to 22), "asr" to (22 to 70),
                 "diarization" to (70 to 85), "separation" to (85 to 97), "align" to (97 to 99))
             var last = -1
@@ -71,6 +72,10 @@ object RecordingProcessor {
                         endMs = it.endMs, text = it.text, overlap = it.overlap)
                 })
                 dao.setModels(id, SpeechModelPaths.ASR_ID, SpeechModelPaths.DIARIZATION_ID, "ru")
+                val elapsed = android.os.SystemClock.elapsedRealtime() - startedAt
+                dao.setProcessingTime(id, elapsed)
+                android.util.Log.i("RecordingProcessor", "processed $id in $elapsed ms, audio ${rec.durationMs} ms, " +
+                    "RTF ${"%.3f".format(java.util.Locale.US, elapsed.toDouble() / rec.durationMs.coerceAtLeast(1))}, ${segments.size} segments")
                 dao.updateStatus(id, "completed", 100, System.currentTimeMillis())
             }
         } catch (e: CancellationException) {
