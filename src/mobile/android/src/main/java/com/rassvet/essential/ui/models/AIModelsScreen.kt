@@ -81,10 +81,8 @@ fun AIModelsScreen(prefs: VaultPreferencesRepository, onBack: () -> Unit) {
         ChatModelSelection.buildOptions(
             context = context,
             installedLocalModels = installed,
-            homeChatMode = "local",
             activeLocalModel = activeModel,
-            cloudProvider = "local",
-        ).filter { it.kind == ChatModelSelection.Kind.LocalModel }
+        )
     }
     val selectedId = activeModel?.let { "local:$it" } ?: ""
     val ram = remember { ChatModelSelection.deviceTotalRamMb(context) }

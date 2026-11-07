@@ -46,15 +46,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import com.rassvet.essential.data.api.JwtPayload
-import com.rassvet.essential.data.api.ApiBaseUrls
-import com.rassvet.essential.data.api.DEV_STUB_AUTH_TOKEN
-import com.rassvet.essential.data.api.EssentialApi
-import com.rassvet.essential.data.api.EssentialHttpException
 import androidx.appcompat.app.AppCompatActivity
-import com.rassvet.essential.data.api.MeAccountResponse
-import com.rassvet.essential.data.api.SubscriptionPaymentItem
-import com.rassvet.essential.data.api.fetchAndCacheMeAccount
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -79,11 +71,7 @@ import com.rassvet.essential.data.local.VaultPreferencesKeys
 import com.rassvet.essential.data.local.VaultPreferencesRepository
 import com.rassvet.essential.data.llm.LlmComputeBackend
 import com.rassvet.essential.data.llm.LiteRtLmCapabilities
-import com.rassvet.essential.data.llm.LocalWebResearch
 import com.rassvet.essential.locale.AppLocales
-import com.rassvet.essential.locale.PlanDisplayLabels
-import com.rassvet.essential.ui.legal.openSupportEmail
-import com.rassvet.essential.ui.legal.openUrl
 import com.rassvet.essential.data.vault.VaultDocuments
 import kotlinx.coroutines.launch
 
@@ -104,10 +92,6 @@ fun SettingsScreen(
     val speakerHint by prefs.speakerCountHint.collectAsState(initial = 0)
     val chatHaptics by prefs.chatHapticsEnabled.collectAsState(initial = true)
     val llmComputeBackend by prefs.llmComputeBackend.collectAsState(initial = LlmComputeBackend.CPU)
-    val localWebResearch by prefs.localWebResearchEnabled.collectAsState(initial = true)
-    val localWebResearchEndpoint by prefs.localWebResearchEndpoint.collectAsState(initial = "")
-    var showWebResearchDialog by remember { mutableStateOf(false) }
-    var webResearchDraft by remember { mutableStateOf("") }
     val gpuBackendBuilt = remember { LiteRtLmCapabilities.isAvailable }
     val gpuAvailable = remember { LiteRtLmCapabilities.isGpuAvailable() }
     val gpuDeviceName =
@@ -119,151 +103,13 @@ fun SettingsScreen(
     val hostActivity = context as? AppCompatActivity
     val themeMode by prefs.themeMode.collectAsState(initial = "system")
     val dynamicColor by prefs.dynamicColor.collectAsState(initial = true)
-    val authToken by prefs.authToken.collectAsState(initial = null)
-    val authAccountEmail by prefs.authAccountEmail.collectAsState(initial = null)
-    val apiBase by prefs.apiBaseUrl.collectAsState(initial = null)
-    var accountInfo by remember { mutableStateOf<MeAccountResponse?>(null) }
-    var accountLoading by remember { mutableStateOf(false) }
-    var accountLoadFailed by remember { mutableStateOf(false) }
-    var accountLoadError by remember { mutableStateOf<Throwable?>(null) }
-    var accountDevStub by remember { mutableStateOf(false) }
-    var accountRefreshKey by remember { mutableIntStateOf(0) }
-    var billingLoading by remember { mutableStateOf(false) }
-    var subscriptionPayments by remember { mutableStateOf<List<SubscriptionPaymentItem>?>(null) }
-    var paymentsLoading by remember { mutableStateOf(false) }
-    var showPaymentsDialog by remember { mutableStateOf(false) }
-    val cachedAccount by prefs.cachedMeAccount.collectAsState(initial = null)
     val reader = ReaderTypographySettings(fontId, fontSize, fontWeight)
-    val isSignedIn = !authToken.isNullOrBlank()
-    val accountLabel =
-        when {
-            isSignedIn && !authAccountEmail.isNullOrBlank() -> authAccountEmail!!
-            isSignedIn -> stringResource(R.string.home_drawer_account_default)
-            else -> stringResource(R.string.settings_account_signed_out)
-        }
-
     fun persist(font: String = fontId, size: Float = fontSize, weight: Int = fontWeight) {
         scope.launch { prefs.setReaderTypography(font, size, weight) }
     }
 
     fun setBool(key: androidx.datastore.preferences.core.Preferences.Key<Boolean>, value: Boolean) {
         scope.launch { prefs.setBooleanPref(key, value) }
-    }
-
-    fun startProCheckout() {
-        val token = authToken?.trim().orEmpty()
-        val base =
-            ApiBaseUrls.normalize(
-                apiBase?.trim()?.takeIf { it.isNotBlank() }
-                    ?: context.getString(R.string.default_api_base).trim(),
-            )
-        if (token.isEmpty() || base.isEmpty()) {
-            Toast.makeText(context, context.getString(R.string.settings_subscription_sign_in), Toast.LENGTH_LONG).show()
-            return
-        }
-        if (billingLoading) return
-        billingLoading = true
-        scope.launch {
-            val result =
-                withContext(Dispatchers.IO) {
-                    runCatching {
-                        val api = EssentialApi(base)
-                        try {
-                            api.createSubscriptionCheckout(token)
-                        } finally {
-                            api.close()
-                        }
-                    }
-                }
-            billingLoading = false
-            result.fold(
-                onSuccess = { checkout ->
-                    context.openUrl(checkout.paymentUrl)
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.settings_subscription_payment_opened),
-                        Toast.LENGTH_LONG,
-                    ).show()
-                },
-                onFailure = { err ->
-                    val msg =
-                        when {
-                            err is EssentialHttpException && err.statusCode == 502 ->
-                                context.getString(R.string.settings_subscription_billing_unavailable)
-                            err is EssentialHttpException && err.statusCode == 401 ->
-                                context.getString(R.string.settings_quota_error_401)
-                            err is UnknownHostException || err is SocketTimeoutException ->
-                                context.getString(R.string.settings_quota_error_network)
-                            else -> context.getString(R.string.settings_subscription_checkout_error)
-                        }
-                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                },
-            )
-        }
-    }
-
-    LaunchedEffect(showPaymentsDialog, authToken, apiBase) {
-        if (!showPaymentsDialog) return@LaunchedEffect
-        val token = authToken?.trim().orEmpty()
-        val base =
-            ApiBaseUrls.normalize(
-                apiBase?.trim()?.takeIf { it.isNotBlank() }
-                    ?: context.getString(R.string.default_api_base).trim(),
-            )
-        if (token.isEmpty() || base.isEmpty() || token == DEV_STUB_AUTH_TOKEN) {
-            subscriptionPayments = emptyList()
-            paymentsLoading = false
-            return@LaunchedEffect
-        }
-        paymentsLoading = true
-        subscriptionPayments = null
-        val paymentsResult =
-            withContext(Dispatchers.IO) {
-                runCatching {
-                    val api = EssentialApi(base)
-                    try {
-                        api.listSubscriptionPayments(token)
-                    } finally {
-                        api.close()
-                    }
-                }
-            }
-        subscriptionPayments = paymentsResult.getOrNull().orEmpty()
-        paymentsLoading = false
-    }
-
-    @Composable
-    fun paymentStatusLabel(status: String): String {
-        return when (status.trim().uppercase(Locale.US)) {
-            "CONFIRMED" -> stringResource(R.string.settings_payment_status_confirmed)
-            "PENDING" -> stringResource(R.string.settings_payment_status_pending)
-            "CANCELED", "CANCELLED" -> stringResource(R.string.settings_payment_status_canceled)
-            "FAILED" -> stringResource(R.string.settings_payment_status_failed)
-            else -> status
-        }
-    }
-
-    @Composable
-    fun quotaErrorMessage(error: Throwable?): String {
-        if (error == null) return stringResource(R.string.settings_quota_error)
-        if (error is EssentialHttpException) {
-            return when (error.statusCode) {
-                401 -> stringResource(R.string.settings_quota_error_401)
-                404 -> stringResource(R.string.settings_quota_error_404)
-                else -> stringResource(R.string.settings_quota_error_http, error.statusCode)
-            }
-        }
-        if (error is UnknownHostException || error is SocketTimeoutException) {
-            return stringResource(R.string.settings_quota_error_network)
-        }
-        val cause = error.cause
-        if (cause is EssentialHttpException) {
-            return quotaErrorMessage(cause)
-        }
-        if (cause is UnknownHostException || cause is SocketTimeoutException) {
-            return stringResource(R.string.settings_quota_error_network)
-        }
-        return stringResource(R.string.settings_quota_error)
     }
 
     Scaffold(
@@ -544,119 +390,6 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(12.dp))
         }
-    }
-
-    if (showWebResearchDialog) {
-        AlertDialog(
-            onDismissRequest = { showWebResearchDialog = false },
-            title = { Text(stringResource(R.string.settings_local_web_research_endpoint)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(R.string.settings_local_web_research_endpoint_dialog_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    OutlinedTextField(
-                        value = webResearchDraft,
-                        onValueChange = { webResearchDraft = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text(LocalWebResearch.DEFAULT_ENDPOINT) },
-                        singleLine = false,
-                        minLines = 2,
-                        maxLines = 4,
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        scope.launch {
-                            prefs.setLocalWebResearchEndpoint(webResearchDraft)
-                            showWebResearchDialog = false
-                        }
-                    },
-                ) {
-                    Text(stringResource(R.string.action_save))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showWebResearchDialog = false }) {
-                    Text(stringResource(R.string.editor_delete_cancel))
-                }
-            },
-        )
-    }
-
-    if (showPaymentsDialog) {
-        val paymentsScroll = rememberScrollState()
-        val paymentDateFormat =
-            remember {
-                DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.getDefault())
-            }
-        AlertDialog(
-            onDismissRequest = { showPaymentsDialog = false },
-            title = { Text(stringResource(R.string.settings_subscription_payments_title)) },
-            text = {
-                when {
-                    paymentsLoading -> {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp,
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_quota_loading),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = TextStyle(fontSize = 12.sp),
-                            )
-                        }
-                    }
-                    subscriptionPayments.isNullOrEmpty() -> {
-                        Text(
-                            text = stringResource(R.string.settings_subscription_payments_empty),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = TextStyle(fontSize = 12.sp),
-                        )
-                    }
-                    else -> {
-                        Column(
-                            modifier =
-                                Modifier
-                                    .heightIn(max = 360.dp)
-                                    .verticalScroll(paymentsScroll),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            subscriptionPayments.orEmpty().forEach { payment ->
-                                val whenMs =
-                                    payment.confirmedAtEpochMs?.takeIf { it > 0L }
-                                        ?: payment.createdAtEpochMs
-                                val dateLabel = paymentDateFormat.format(Date(whenMs))
-                                Text(
-                                    text =
-                                        stringResource(
-                                            R.string.settings_payment_row,
-                                            dateLabel,
-                                            payment.amountRub.toInt(),
-                                            paymentStatusLabel(payment.status),
-                                        ),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    style = TextStyle(fontSize = 12.sp),
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showPaymentsDialog = false }) {
-                    Text(stringResource(R.string.cd_close))
-                }
-            },
-        )
     }
 
     if (showLanguageDialog && hostActivity != null) {

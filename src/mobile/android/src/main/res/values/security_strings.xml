@@ -8,7 +8,6 @@
     <string name="pin_unlock_title">Unlock Lazure</string>
     <string name="pin_digits">%1$d digits</string>
     <string name="pin_confirm_hint">Enter the same PIN again</string>
-    <string name="pin_input_hint">Enter your 4 or 6 digit PIN</string>
     <string name="pin_mismatch">PIN codes do not match. Try again.</string>
     <string name="pin_incorrect">Incorrect PIN</string>
     <string name="pin_locked">Too many attempts. Try again in 30 seconds.</string>

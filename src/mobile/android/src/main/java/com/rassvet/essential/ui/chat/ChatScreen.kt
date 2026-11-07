@@ -55,7 +55,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.rassvet.essential.R
-import com.rassvet.essential.data.api.EssentialApiErrors
 import com.rassvet.essential.data.chat.ChatEngine
 import com.rassvet.essential.data.local.AppDatabase
 import com.rassvet.essential.data.local.VaultPreferencesRepository
@@ -99,8 +98,6 @@ fun ChatScreen(
     val haptics = rememberChatHaptics(hapticsEnabled)
     val notesSuggestion = stringResource(R.string.chat_notes_suggestion)
     var input by remember { mutableStateOf("") }
-    var apiBase by remember { mutableStateOf<String?>(null) }
-    var token by remember { mutableStateOf<String?>(null) }
     val messages = remember { mutableStateListOf<Pair<String, String>>() }
     var isThinking by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -143,12 +140,6 @@ fun ChatScreen(
         }
     }
 
-    LaunchedEffect(prefs) {
-        kotlinx.coroutines.coroutineScope {
-            launch { prefs.apiBaseUrl.collect { apiBase = it } }
-            launch { prefs.authToken.collect { token = it } }
-        }
-    }
     LaunchedEffect(messages.size, isThinking) {
         if (messages.isNotEmpty()) listState.scrollToItem(messages.lastIndex)
     }
@@ -194,15 +185,6 @@ fun ChatScreen(
                         vaultStored = null,
                         streamReplies = streamReplies,
                         semanticSearchEnabled = false,
-                        cloudMode = false,
-                        cloudProvider = "local",
-                        apiBase = apiBase,
-                        authToken = token,
-                        openAiBase = null,
-                        openAiKey = null,
-                        openAiModel = null,
-                        geminiKey = null,
-                        geminiModel = null,
                     ),
                 ) { chunk ->
                     if (streamReplies) output.append(chunk) else output.setLength(0).also { output.append(chunk) }
@@ -212,7 +194,7 @@ fun ChatScreen(
                         lastPublishedAt = now
                     }
                 }.text
-            }.getOrElse { EssentialApiErrors.chatMessage(context, it) }
+            }.getOrElse { it.message?.takeIf { m -> m.isNotBlank() } ?: context.getString(R.string.chat_error_no_response) }
             isThinking = false
             haptics.onGenerationComplete()
             val finalText = reply.ifBlank { context.getString(R.string.chat_error_no_response) }

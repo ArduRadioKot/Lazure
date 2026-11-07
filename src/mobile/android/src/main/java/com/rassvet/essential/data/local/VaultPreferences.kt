@@ -10,7 +10,6 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.rassvet.essential.data.api.MeAccountResponse
 import com.rassvet.essential.data.llm.LlamaRuntimeParams
 import com.rassvet.essential.data.llm.LlmComputeBackend
 import com.rassvet.essential.data.security.PassphraseKeystore
@@ -38,6 +37,7 @@ object VaultPreferencesKeys {
     val activeGgufName = stringPreferencesKey("active_gguf_name")
 
 
+    // Legacy keys of the removed cloud chat. Kept only so prepareOfflineMode() can wipe values from older installs.
     val cloudLlmProvider = stringPreferencesKey("cloud_llm_provider")
 
 
@@ -99,31 +99,6 @@ class VaultPreferencesRepository(
     val vaultTreeUri: Flow<String?> =
         context.dataStore.data.map { it[VaultPreferencesKeys.vaultTreeUri] }
 
-    val apiBaseUrl: Flow<String?> =
-        context.dataStore.data.map { it[VaultPreferencesKeys.apiBaseUrl] }
-
-    val authToken: Flow<String?> =
-        context.dataStore.data.map { it[VaultPreferencesKeys.authToken] }
-
-    val authAccountEmail: Flow<String?> =
-        context.dataStore.data.map { it[VaultPreferencesKeys.authAccountEmail] }
-
-    val cachedMeAccount: Flow<MeAccountResponse?> =
-        context.dataStore.data.map { prefs ->
-            val status = prefs[VaultPreferencesKeys.cachedSubscriptionStatus] ?: return@map null
-            MeAccountResponse(
-                status,
-                prefs[VaultPreferencesKeys.cachedTokensUsed] ?: 0L,
-                prefs[VaultPreferencesKeys.cachedTokensQuota] ?: 0L,
-                0L,
-                0L,
-                0L,
-                prefs[VaultPreferencesKeys.cachedSubscriptionExpiresAt],
-                prefs[VaultPreferencesKeys.cachedSubscriptionPriceRub] ?: 10,
-                prefs[VaultPreferencesKeys.cachedSubscriptionPeriodDays] ?: 31,
-            )
-        }
-
     val snapshotPassphrase: Flow<String?> =
         context.dataStore.data.map { prefs ->
             passphraseKeystore.decrypt(prefs[VaultPreferencesKeys.snapshotPassphrase])
@@ -135,26 +110,8 @@ class VaultPreferencesRepository(
     val activeGgufName: Flow<String?> =
         context.dataStore.data.map { it[VaultPreferencesKeys.activeGgufName] }
 
-    val cloudLlmProvider: Flow<String> =
-        context.dataStore.data.map { it[VaultPreferencesKeys.cloudLlmProvider] ?: "local" }
-
     val homeChatMode: Flow<String> =
         context.dataStore.data.map { it[VaultPreferencesKeys.homeChatMode] ?: "local" }
-
-    val openAiCompatBaseUrl: Flow<String?> =
-        context.dataStore.data.map { it[VaultPreferencesKeys.openAiCompatBaseUrl] }
-
-    val openAiCompatApiKey: Flow<String?> =
-        context.dataStore.data.map { it[VaultPreferencesKeys.openAiCompatApiKey] }
-
-    val openAiCompatModel: Flow<String?> =
-        context.dataStore.data.map { it[VaultPreferencesKeys.openAiCompatModel] }
-
-    val geminiApiKey: Flow<String?> =
-        context.dataStore.data.map { it[VaultPreferencesKeys.geminiApiKey] }
-
-    val geminiModel: Flow<String?> =
-        context.dataStore.data.map { it[VaultPreferencesKeys.geminiModel] }
 
     val compressImages: Flow<Boolean> =
         context.dataStore.data.map { it[VaultPreferencesKeys.compressImages] ?: true }
@@ -216,12 +173,6 @@ class VaultPreferencesRepository(
     val llmComputeBackend: Flow<String> =
         context.dataStore.data.map { it[VaultPreferencesKeys.llmComputeBackend] ?: LlmComputeBackend.CPU }
 
-    val localWebResearchEnabled: Flow<Boolean> =
-        context.dataStore.data.map { it[VaultPreferencesKeys.localWebResearchEnabled] ?: true }
-
-    val localWebResearchEndpoint: Flow<String> =
-        context.dataStore.data.map { it[VaultPreferencesKeys.localWebResearchEndpoint].orEmpty() }
-
     /** One-time switch to CPU for installs that were auto-set to GPU before CPU became the default. */
     suspend fun applyCpuDefaultOnce() {
         context.dataStore.edit { prefs ->
@@ -248,31 +199,6 @@ class VaultPreferencesRepository(
         }
     }
 
-    suspend fun resolveLocalWebResearchEnabled(): Boolean =
-        context.dataStore.data.first()[VaultPreferencesKeys.localWebResearchEnabled] ?: true
-
-    suspend fun resolveLocalWebResearchEndpoint(): String? =
-        context.dataStore.data.first()[VaultPreferencesKeys.localWebResearchEndpoint]
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
-
-    suspend fun setLocalWebResearchEnabled(enabled: Boolean) {
-        context.dataStore.edit { prefs ->
-            prefs[VaultPreferencesKeys.localWebResearchEnabled] = enabled
-        }
-    }
-
-    suspend fun setLocalWebResearchEndpoint(endpoint: String?) {
-        context.dataStore.edit { prefs ->
-            val trimmed = endpoint?.trim().orEmpty()
-            if (trimmed.isBlank()) {
-                prefs.remove(VaultPreferencesKeys.localWebResearchEndpoint)
-            } else {
-                prefs[VaultPreferencesKeys.localWebResearchEndpoint] = trimmed
-            }
-        }
-    }
-
     val readerFontId: Flow<String> =
         context.dataStore.data.map { it[VaultPreferencesKeys.readerFontId] ?: "georgia" }
 
@@ -281,6 +207,7 @@ class VaultPreferencesRepository(
 
     val readerFontWeight: Flow<Int> =
         context.dataStore.data.map { it[VaultPreferencesKeys.readerFontWeight] ?: 400 }
+
 
     suspend fun setBooleanPref(key: androidx.datastore.preferences.core.Preferences.Key<Boolean>, v: Boolean) {
         context.dataStore.edit { it[key] = v }
@@ -325,35 +252,6 @@ class VaultPreferencesRepository(
         setVaultTreeUri(null)
     }
 
-    suspend fun setApiBaseUrl(url: String?) {
-        context.dataStore.edit { prefs ->
-            if (url == null) prefs.remove(VaultPreferencesKeys.apiBaseUrl)
-            else prefs[VaultPreferencesKeys.apiBaseUrl] = com.rassvet.essential.data.api.ApiBaseUrls.normalize(url)
-        }
-    }
-
-    suspend fun setAccountQuotaCache(
-        subscriptionStatus: String,
-        tokensUsed: Long,
-        tokensQuota: Long,
-        subscriptionExpiresAtEpochMs: Long? = null,
-        subscriptionPriceRub: Int = 10,
-        subscriptionPeriodDays: Int = 31,
-    ) {
-        context.dataStore.edit { prefs ->
-            prefs[VaultPreferencesKeys.cachedSubscriptionStatus] = subscriptionStatus
-            prefs[VaultPreferencesKeys.cachedTokensUsed] = tokensUsed
-            prefs[VaultPreferencesKeys.cachedTokensQuota] = tokensQuota
-            if (subscriptionExpiresAtEpochMs != null && subscriptionExpiresAtEpochMs > 0L) {
-                prefs[VaultPreferencesKeys.cachedSubscriptionExpiresAt] = subscriptionExpiresAtEpochMs
-            } else {
-                prefs.remove(VaultPreferencesKeys.cachedSubscriptionExpiresAt)
-            }
-            prefs[VaultPreferencesKeys.cachedSubscriptionPriceRub] = subscriptionPriceRub
-            prefs[VaultPreferencesKeys.cachedSubscriptionPeriodDays] = subscriptionPeriodDays
-        }
-    }
-
     private fun clearAccountQuotaCache(prefs: androidx.datastore.preferences.core.MutablePreferences) {
         prefs.remove(VaultPreferencesKeys.cachedSubscriptionStatus)
         prefs.remove(VaultPreferencesKeys.cachedTokensUsed)
@@ -361,25 +259,6 @@ class VaultPreferencesRepository(
         prefs.remove(VaultPreferencesKeys.cachedSubscriptionExpiresAt)
         prefs.remove(VaultPreferencesKeys.cachedSubscriptionPriceRub)
         prefs.remove(VaultPreferencesKeys.cachedSubscriptionPeriodDays)
-    }
-
-    suspend fun setAuthToken(token: String?, accountEmail: String? = null) {
-        context.dataStore.edit { prefs ->
-            if (token == null) {
-                prefs.remove(VaultPreferencesKeys.authToken)
-                prefs.remove(VaultPreferencesKeys.authAccountEmail)
-                prefs[VaultPreferencesKeys.needsRegisterWelcome] = false
-                prefs.remove(VaultPreferencesKeys.vaultTreeUri)
-                clearAccountQuotaCache(prefs)
-            } else {
-                prefs[VaultPreferencesKeys.authToken] =
-                    com.rassvet.essential.data.api.EssentialApi.normalizeAuthToken(token)
-                val email = accountEmail?.trim().orEmpty()
-                if (email.isNotEmpty()) {
-                    prefs[VaultPreferencesKeys.authAccountEmail] = email
-                }
-            }
-        }
     }
 
     suspend fun prepareOfflineMode() {
@@ -410,19 +289,6 @@ class VaultPreferencesRepository(
     }
 
 
-    suspend fun setAuthTokenAfterRegister(token: String, accountEmail: String? = null) {
-        context.dataStore.edit { prefs ->
-            prefs[VaultPreferencesKeys.authToken] =
-                com.rassvet.essential.data.api.EssentialApi.normalizeAuthToken(token)
-            prefs[VaultPreferencesKeys.needsRegisterWelcome] = true
-            prefs.remove(VaultPreferencesKeys.vaultTreeUri)
-            val email = accountEmail?.trim().orEmpty()
-            if (email.isNotEmpty()) {
-                prefs[VaultPreferencesKeys.authAccountEmail] = email
-            }
-        }
-    }
-
     suspend fun setSnapshotPassphrase(pass: String?) {
         context.dataStore.edit { prefs ->
             if (pass.isNullOrBlank()) {
@@ -449,39 +315,6 @@ class VaultPreferencesRepository(
     suspend fun setHomeChatMode(mode: String) {
         context.dataStore.edit { prefs ->
             prefs[VaultPreferencesKeys.homeChatMode] = mode
-        }
-    }
-
-    suspend fun setCloudLlmProvider(value: String) {
-        context.dataStore.edit { prefs ->
-            prefs[VaultPreferencesKeys.cloudLlmProvider] = value
-        }
-    }
-
-    suspend fun setOpenAiCompat(
-        baseUrl: String?,
-        apiKey: String?,
-        model: String?,
-    ) {
-        context.dataStore.edit { prefs ->
-            if (baseUrl.isNullOrBlank()) prefs.remove(VaultPreferencesKeys.openAiCompatBaseUrl)
-            else prefs[VaultPreferencesKeys.openAiCompatBaseUrl] = baseUrl.trim()
-            if (apiKey.isNullOrBlank()) prefs.remove(VaultPreferencesKeys.openAiCompatApiKey)
-            else prefs[VaultPreferencesKeys.openAiCompatApiKey] = apiKey.trim()
-            if (model.isNullOrBlank()) prefs.remove(VaultPreferencesKeys.openAiCompatModel)
-            else prefs[VaultPreferencesKeys.openAiCompatModel] = model.trim()
-        }
-    }
-
-    suspend fun setGemini(
-        apiKey: String?,
-        model: String?,
-    ) {
-        context.dataStore.edit { prefs ->
-            if (apiKey.isNullOrBlank()) prefs.remove(VaultPreferencesKeys.geminiApiKey)
-            else prefs[VaultPreferencesKeys.geminiApiKey] = apiKey.trim()
-            if (model.isNullOrBlank()) prefs.remove(VaultPreferencesKeys.geminiModel)
-            else prefs[VaultPreferencesKeys.geminiModel] = model.trim()
         }
     }
 

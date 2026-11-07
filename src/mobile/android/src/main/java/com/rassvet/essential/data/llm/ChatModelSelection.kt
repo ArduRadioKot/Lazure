@@ -2,19 +2,12 @@ package com.rassvet.essential.data.llm
 
 import android.app.ActivityManager
 import android.content.Context
-import com.rassvet.essential.BuildConfig
 import com.rassvet.essential.data.local.VaultPreferencesRepository
 
 object ChatModelSelection {
-    const val CLOUD_SENTINEL = "essentialai"
-    const val ESSENTIAL_AI_LABEL = "Lazure"
-
+    /** Every model is local; the enum is kept so the option model can grow without changing callers. */
     enum class Kind {
         LocalModel,
-        CloudTimeweb,
-        CloudGemini,
-        CloudOpenAi,
-        CloudEssentialApi,
     }
 
     data class Option(
@@ -49,37 +42,13 @@ object ChatModelSelection {
             ?: LocalModelCatalog.presets.minBy { it.ramMb }
     }
 
-    fun isCloudMode(homeChatMode: String, activeLocalModel: String?): Boolean = false
-
-    fun resolveCloudProvider(
-        homeChatMode: String,
-        activeLocalModel: String?,
-        cloudProvider: String,
-    ): String =
-        when {
-            cloudProvider == "essential" -> "essential"
-            homeChatMode == "timeweb_cloud" ||
-                (activeLocalModel == CLOUD_SENTINEL && homeChatMode != "cloud") ->
-                if (BuildConfig.ALLOW_DIRECT_CLOUD) "timeweb" else "essential"
-            isCloudMode(homeChatMode, activeLocalModel) -> cloudProvider
-            else -> cloudProvider
-        }
-
-    suspend fun applyDefaultEssentialAi(prefs: VaultPreferencesRepository) {
-        prefs.setActiveGguf(CLOUD_SENTINEL)
-        prefs.setHomeChatMode("timeweb_cloud")
-        prefs.setCloudLlmProvider("essential")
-    }
-
     fun buildOptions(
         context: Context,
         installedLocalModels: List<String>,
-        homeChatMode: String,
         activeLocalModel: String?,
-        cloudProvider: String,
     ): List<Option> {
         val ramMb = deviceTotalRamMb(context)
-        val selectedId = currentSelectionId(homeChatMode, activeLocalModel, cloudProvider)
+        val selectedId = currentSelectionId(activeLocalModel)
         val options = mutableListOf<Option>()
 
         installedLocalModels.forEach { fileName ->
@@ -155,45 +124,14 @@ object ChatModelSelection {
         }
     }
 
-    fun currentSelectionId(
-        homeChatMode: String,
-        activeLocalModel: String?,
-        cloudProvider: String,
-    ): String =
+    fun currentSelectionId(activeLocalModel: String?): String =
         when {
-            isCloudMode(homeChatMode, activeLocalModel) -> "cloud_essential"
             !activeLocalModel.isNullOrBlank() -> "local:$activeLocalModel"
             else -> "local:${LocalModelCatalog.presets.first().fileName}"
         }
 
     fun presetForOption(option: Option): LocalModelCatalog.Preset? =
         option.localFileName?.let { name -> LocalModelCatalog.presetForFileName(name) }
-
-    fun pillLabel(
-        context: Context,
-        homeChatMode: String,
-        activeLocalModel: String?,
-        cloudProvider: String,
-        installedLocalModels: List<String>,
-    ): String {
-        val options =
-            buildOptions(
-                context = context,
-                installedLocalModels = installedLocalModels,
-                homeChatMode = homeChatMode,
-                activeLocalModel = activeLocalModel,
-                cloudProvider = cloudProvider,
-            )
-        val selected = currentSelectionId(homeChatMode, activeLocalModel, cloudProvider)
-        return options.firstOrNull { it.id == selected && it.available }?.pillLabel
-            ?: when {
-                isCloudMode(homeChatMode, activeLocalModel) -> shortLocalModelLabel(recommendedPreset(deviceTotalRamMb(context)).fileName)
-                activeLocalModel == CLOUD_SENTINEL -> shortLocalModelLabel(recommendedPreset(deviceTotalRamMb(context)).fileName)
-                !activeLocalModel.isNullOrBlank() -> shortLocalModelLabel(activeLocalModel)
-                installedLocalModels.isNotEmpty() -> shortLocalModelLabel(installedLocalModels.first())
-                else -> shortLocalModelLabel(recommendedPreset(deviceTotalRamMb(context)).fileName)
-            }
-    }
 
     suspend fun applySelection(prefs: VaultPreferencesRepository, option: Option) {
         when (option.kind) {
@@ -202,27 +140,10 @@ object ChatModelSelection {
                 prefs.setActiveGguf(file)
                 prefs.setHomeChatMode("local")
             }
-            Kind.CloudTimeweb,
-            Kind.CloudEssentialApi -> {
-                prefs.setActiveGguf(CLOUD_SENTINEL)
-                prefs.setHomeChatMode("timeweb_cloud")
-                prefs.setCloudLlmProvider("essential")
-            }
-            Kind.CloudGemini -> {
-                prefs.setActiveGguf(CLOUD_SENTINEL)
-                prefs.setHomeChatMode("cloud")
-                prefs.setCloudLlmProvider("gemini")
-            }
-            Kind.CloudOpenAi -> {
-                prefs.setActiveGguf(CLOUD_SENTINEL)
-                prefs.setHomeChatMode("cloud")
-                prefs.setCloudLlmProvider("openai_compat")
-            }
         }
     }
 
     fun shortLocalModelLabel(fileName: String): String {
-        if (fileName == CLOUD_SENTINEL) return ESSENTIAL_AI_LABEL
         val preset = LocalModelCatalog.presetForFileName(fileName)
         if (preset != null) return preset.label
         return LocalModelFormats.displayStem(fileName)
