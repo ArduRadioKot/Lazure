@@ -20,9 +20,9 @@ local.properties
 *.pdf
 
 # --- Lazure speech/LLM artifacts (large; fetched by scripts, never committed) ---
-# Models bundled into the APK: run speech-decoder/scripts/fetch_models.sh (ASR/VAD/diarization/DTLN/separation)
+# Models bundled into the APK: run tools/models/fetch_models.sh (ASR/VAD/diarization/DTLN/separation)
 src/mobile/android/src/main/assets/models/
-# Bundled LLM (Qwen3 0.6B .litertlm): see docs / IMPLEMENTATION_PROGRESS.md
+# Bundled LLM (Qwen3 0.6B INT4 .litertlm): placed by tools/models/fetch_models.sh
 src/mobile/android/src/main/assets/bundled_llm/
 # sherpa-onnx static JNI build (24+ MB per ABI), also placed by fetch_models.sh
 src/mobile/android/src/main/jniLibs/*/libsherpa-onnx-jni.so
