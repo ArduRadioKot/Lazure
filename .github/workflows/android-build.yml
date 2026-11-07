@@ -33,6 +33,9 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The default "tools platform-tools" fails: the legacy "tools" package no longer exists in sdkmanager.
+          packages: platform-tools
 
       - name: Install NDK and CMake (versions from src/mobile/android/build.gradle.kts)
         run: yes | sdkmanager --install "platforms;android-36" "ndk;27.1.12297006" "cmake;3.22.1" > /dev/null
