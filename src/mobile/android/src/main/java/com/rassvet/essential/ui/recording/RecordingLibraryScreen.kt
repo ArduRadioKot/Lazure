@@ -169,6 +169,11 @@ fun RecordingLibraryScreen(repository: RecordingRepository, onBack: () -> Unit, 
             LazyColumn(Modifier.fillMaxSize().padding(insets), state = listState, contentPadding = PaddingValues(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item { Text(statusText(row.processingStatus), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary) }
+                if (row.processingStatus == "completed" && row.processingMs > 0 && row.durationMs > 0) item {
+                    // Speed is a judged metric: show wall-clock processing time and RTF (processing time / audio length).
+                    Text(stringResource(R.string.recordings_processing_time, row.processingMs / 1000f, row.processingMs.toFloat() / row.durationMs),
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 item { PlayerBar(playerState, row.audioPath, segments, speakers) }
                 if (ai != null && row.processingStatus == "completed" && segments.isNotEmpty()) item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

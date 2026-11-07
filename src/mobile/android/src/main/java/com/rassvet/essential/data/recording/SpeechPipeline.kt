@@ -21,7 +21,7 @@ import com.k2fsa.sherpa.onnx.VadModelConfig
 import java.nio.ByteOrder
 import kotlin.math.min
 
-/** Models bundled in assets/models; the manifest lives in speech-decoder/models/manifest.json. */
+/** Models bundled in assets/models; the manifest lives in tools/models/manifest.json. */
 object SpeechModelPaths {
     const val ASR_DIR = "models/asr-gigaam-v3-ru"
     const val ASR_MODEL = "$ASR_DIR/model.int8.onnx"
@@ -227,10 +227,25 @@ internal class SpeakerMatcher(context: Context) : AutoCloseable {
 
 data class PipelineSegment(val startMs: Long, val endMs: Long, val speaker: Int, val text: String, val overlap: Boolean = false)
 
+/** End time of a recognised token, from its start and the start of whatever follows it (next token or end of speech). */
+object TokenTiming {
+    /** Shortest token duration; also the end used when nothing is known about what follows. */
+    const val MIN_TOKEN_MS = 80L
+    /** Longest token duration: a gap longer than this before the next token is a pause, not part of the word. */
+    const val MAX_TOKEN_MS = 1_500L
+
+    fun endMs(startMs: Long, nextStartMs: Long): Long =
+        nextStartMs.coerceIn(startMs + MIN_TOKEN_MS, startMs + MAX_TOKEN_MS)
+}
+
 /** VAD → ASR → diarization → timestamp alignment. Everything runs on-device through sherpa-onnx. */
 class SpeechPipeline(private val context: Context) {
     private val decoder = MediaCodecAudioDecoder()
-    private companion object { const val MAX_SIMULTANEOUS = 4 }
+    private companion object {
+        const val MAX_SIMULTANEOUS = 4
+        const val MIN_TOKEN_MS = TokenTiming.MIN_TOKEN_MS
+        fun tokenEnd(startMs: Long, nextStartMs: Long) = TokenTiming.endMs(startMs, nextStartMs)
+    }
 
     fun modelsAvailable(): Boolean = listOf(
         SpeechModelPaths.ASR_MODEL, SpeechModelPaths.ASR_TOKENS, SpeechModelPaths.VAD,
@@ -269,9 +284,15 @@ class SpeechPipeline(private val context: Context) {
                 val durMs = seg.samples.size * 1000L / SpeechModelPaths.SAMPLE_RATE
                 android.util.Log.i("SpeechPipeline", "asr[$i] ${seg.samples.size} -> '${r.text.trim()}'")
                 if (r.text.isNotBlank()) {
-                    if (r.tokens.isNotEmpty() && r.timestamps.size == r.tokens.size)
-                        r.tokens.forEachIndexed { k, t -> tokens += Tok(startMs + (r.timestamps[k] * 1000).toLong(), t, -1) }
-                    else noTimestamps += PipelineSegment(startMs, startMs + maxOf(durMs, 100), -1, r.text.trim())
+                    if (r.tokens.isNotEmpty() && r.timestamps.size == r.tokens.size) {
+                        // CTC reports when a token starts. A token ends where the next one starts; the last one ends where
+                        // the VAD says speech stopped. Using "start + 80 ms" instead cut every reply short by its last word.
+                        val starts = LongArray(r.tokens.size) { k -> startMs + (r.timestamps[k] * 1000).toLong() }
+                        r.tokens.forEachIndexed { k, t ->
+                            val next = if (k + 1 < starts.size) starts[k + 1] else seg.speechEndMs
+                            tokens += Tok(starts[k], t, -1, tokenEnd(starts[k], next))
+                        }
+                    } else noTimestamps += PipelineSegment(startMs, startMs + maxOf(durMs, 100), -1, r.text.trim())
                 }
                 onProgress("asr", (i + 1f) / utterances.size)
             }
@@ -369,7 +390,11 @@ class SpeechPipeline(private val context: Context) {
             if (withOther || inRegion) s.copy(overlap = true) else s
         }
 
-    private data class Tok(val ms: Long, val text: String, val speaker: Int)
+    /** A recognised token: start time, text, speaker and end time (absolute ms). */
+    private data class Tok(val ms: Long, val text: String, val speaker: Int, val endMs: Long = ms + MIN_TOKEN_MS)
+
+    /** A VAD segment: audio cut from the ASR signal with padding, plus the end of the detected speech itself. */
+    private class VadSegment(val start: Long, val samples: FloatArray, val speechEndMs: Long)
     private data class SpeakerUnit(val startMs: Long, val endMs: Long, val speaker: Int)
 
     private fun speakerFromUnits(units: List<SpeakerUnit>, ms: Long): Int? {
@@ -627,8 +652,8 @@ class SpeechPipeline(private val context: Context) {
             }
             for (t in sorted) {
                 if (sb.isEmpty()) start = t.ms
-                else if (t.ms - end > 1000 || t.ms - start > 30_000) { flush(); start = t.ms }
-                sb.append(t.text); end = t.ms + 80
+                else if (t.ms - end > 1000 || t.ms - start > 30_000) { flush(); start = t.ms; end = 0L }
+                sb.append(t.text); end = maxOf(end, t.endMs)
             }
             flush()
         }
@@ -802,9 +827,11 @@ class SpeechPipeline(private val context: Context) {
         for (k in sr.src.indices) {
             val res = recognizeSamples(rec, sr.src[k])
             if (res.tokens.isEmpty() || res.timestamps.size != res.tokens.size) continue
+            val starts = LongArray(res.tokens.size) { i -> sr.windowStartMs + (res.timestamps[i] * 1000).toLong() }
             res.tokens.forEachIndexed { i, t ->
-                val ms = sr.windowStartMs + (res.timestamps[i] * 1000).toLong()
-                if (ms in sr.region.startMs..sr.region.endMs) out += Tok(ms, t, sr.owner[k])
+                val ms = starts[i]
+                val next = if (i + 1 < starts.size) starts[i + 1] else ms + MIN_TOKEN_MS
+                if (ms in sr.region.startMs..sr.region.endMs) out += Tok(ms, t, sr.owner[k], minOf(tokenEnd(ms, next), sr.region.endMs))
             }
         }
         return out
@@ -838,7 +865,7 @@ class SpeechPipeline(private val context: Context) {
     private fun threads() = (Runtime.getRuntime().availableProcessors() - 1).coerceIn(1, 4)
 
     /** VAD runs on [vadSignal]; returned segments carry audio cut from [asrSignal] at the same sample positions. */
-    private fun detectSpeech(vadSignal: ShortArray, asrSignal: ShortArray, threshold: Float): List<com.k2fsa.sherpa.onnx.SpeechSegment> {
+    private fun detectSpeech(vadSignal: ShortArray, asrSignal: ShortArray, threshold: Float): List<VadSegment> {
         val vad = Vad(context.assets, VadModelConfig(
             sileroVadModelConfig = SileroVadModelConfig(
                 model = SpeechModelPaths.VAD, threshold = threshold, minSilenceDuration = 0.4f,
@@ -868,14 +895,15 @@ class SpeechPipeline(private val context: Context) {
         } finally { vad.release() }
         // Silero reports a speech start a few hundred ms late, which clipped the first word of a reply ("Нужно позвонить" came
         // out as "Позвонить"). Give the recogniser 0.25 s before and 0.15 s after each segment, never reaching into a neighbour.
-        val result = ArrayList<com.k2fsa.sherpa.onnx.SpeechSegment>()
+        val result = ArrayList<VadSegment>()
         for ((k, r) in raw.withIndex()) {
             val prevEnd = if (k > 0) raw[k - 1].first + raw[k - 1].second else 0
             val nextStart = if (k + 1 < raw.size) raw[k + 1].first else asrSignal.size
             val gapBefore = r.first - prevEnd; val gapAfter = nextStart - (r.first + r.second)
             val st = r.first - minOf(4000, maxOf(0, gapBefore / 2))
             val en = r.first + r.second + minOf(2400, maxOf(0, gapAfter / 2))
-            result += com.k2fsa.sherpa.onnx.SpeechSegment(st.toLong(), DspChain.floats(asrSignal, st.coerceIn(0, asrSignal.size), en.coerceIn(0, asrSignal.size)))
+            val speechEndMs = (r.first + r.second).toLong() * 1000 / SpeechModelPaths.SAMPLE_RATE
+            result += VadSegment(st.toLong(), DspChain.floats(asrSignal, st.coerceIn(0, asrSignal.size), en.coerceIn(0, asrSignal.size)), speechEndMs)
         }
         return result
     }
