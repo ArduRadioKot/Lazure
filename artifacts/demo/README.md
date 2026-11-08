@@ -23,7 +23,7 @@
 
 | Файл | Описание |
 |---|---|
-| [`demo.mp4`](demo.mp4) | Запись экрана телефона с работой приложения (5 мин 15 с, 31 МБ) |
+| [`demo.mp4`](demo.mp4) | Запись экрана телефона с работой приложения (6 мин 11 с, 7 МБ): два ролика, склеенных подряд |
 | [`input/dialog_two_men_interruptions.m4a`](input/dialog_two_men_interruptions.m4a) | Живая запись: два мужских голоса, Мужчина 2 перебивает Мужчину 1 |
 | [`input/dialog_two_men_interruptions.md`](input/dialog_two_men_interruptions.md) | Разметка этой записи от автора (текст и кто говорит, без точных времён) |
 | [`output/dialog_two_men_interruptions.json`](output/dialog_two_men_interruptions.json) | JSON, который выдало приложение на этой записи (debug-сборка, эмулятор ARM64) |
