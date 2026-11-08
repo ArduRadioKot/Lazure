@@ -1,0 +1,160 @@
+{
+  "transcript": [
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 196,
+      "end_ms": 3045,
+      "text": "Нужно позвонить клиенту сегодня."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 3208,
+      "end_ms": 3712,
+      "text": "Да."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 3837,
+      "end_ms": 5689,
+      "text": "Сроки зависят от поставщика."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 5938,
+      "end_ms": 6478,
+      "text": "Угу."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 6703,
+      "end_ms": 7407,
+      "text": "Спасибо."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 7518,
+      "end_ms": 9738,
+      "text": "Бюджет мы утвердили вчера."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 9932,
+      "end_ms": 10514,
+      "text": "Понятно."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 10695,
+      "end_ms": 13233,
+      "text": "Сроки зависят от поставщика."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 13502,
+      "end_ms": 15354,
+      "text": "Сроки зависят от поставщика."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 15586,
+      "end_ms": 17792,
+      "text": "Бюджет мы утвердили вчера."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 17914,
+      "end_ms": 20325,
+      "text": "Склад находится на другом конце города."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 20620,
+      "end_ms": 21332,
+      "text": "Точно."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 21412,
+      "end_ms": 23617,
+      "text": "Бюджет мы утвердили вчера."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 23772,
+      "end_ms": 25382,
+      "text": "Бюджет мы утвердили вчера."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 25621,
+      "end_ms": 29010,
+      "text": "Давайте перенесём совещание на завтра."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 29098,
+      "end_ms": 31944,
+      "text": "Нужно позвонить клиенту сегодня."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 32117,
+      "end_ms": 32630,
+      "text": "Точно."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 32690,
+      "end_ms": 34206,
+      "text": "Ага, ясно."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 34423,
+      "end_ms": 36394,
+      "text": "Я отправлю отчёт до пятницы."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 36635,
+      "end_ms": 37175,
+      "text": "Угу."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 37369,
+      "end_ms": 38480,
+      "text": "Ага, ясно."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 38749,
+      "end_ms": 39461,
+      "text": "Точно."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 39589,
+      "end_ms": 40294,
+      "text": "Спасибо."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 40518,
+      "end_ms": 41416,
+      "text": "Конечно."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 41615,
+      "end_ms": 42457,
+      "text": "Хорошо."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 42652,
+      "end_ms": 43510,
+      "text": "Хорошо."
+    }
+  ]
+}

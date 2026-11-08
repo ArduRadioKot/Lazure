@@ -1,0 +1,100 @@
+{
+  "transcript": [
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 684,
+      "end_ms": 2928,
+      "text": "Бюджет мы утвердили вчера"
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 3372,
+      "end_ms": 5932,
+      "text": "Нужно позвонить клиенту сегодня."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 6156,
+      "end_ms": 8556,
+      "text": "Бюджет мы утвердили вчера."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 8620,
+      "end_ms": 11180,
+      "text": "Нужно позвонить клиенту сегодня."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 11756,
+      "end_ms": 14475,
+      "text": "Нужно позвонить клиенту сегодня."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 14924,
+      "end_ms": 17008,
+      "text": "Встреча начнётся в 10:00 утра"
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 17708,
+      "end_ms": 21227,
+      "text": "Склад находится на другом конце города."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 21259,
+      "end_ms": 23859,
+      "text": "Сроки зависят от поставщика."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 23859,
+      "end_ms": 27771,
+      "text": "Склад находится на другом конце города. Я"
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 27771,
+      "end_ms": 29651,
+      "text": "отправлю отчёт до пятницы."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 29643,
+      "end_ms": 32563,
+      "text": "Сроки зависят от поставщика."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 32684,
+      "end_ms": 35564,
+      "text": "Договор уже подписан обеими сторонами."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 35884,
+      "end_ms": 39403,
+      "text": "Склад находится на другом конце города."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 39451,
+      "end_ms": 41971,
+      "text": "Сроки зависят от поставщика."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 41971,
+      "end_ms": 45290,
+      "text": "Договор уже подписан обеими сторонами."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 45420,
+      "end_ms": 47520,
+      "text": "Сроки зависят от поставщика"
+    }
+  ]
+}

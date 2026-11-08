@@ -1,0 +1,124 @@
+{
+  "transcript": [
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 364,
+      "end_ms": 3324,
+      "text": "— Нужно позвонить клиенту сегодня?—"
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 3324,
+      "end_ms": 3924,
+      "text": "Да."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 3924,
+      "end_ms": 7524,
+      "text": "Сроки зависят от поставщика. Спасибо."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 5964,
+      "end_ms": 9963,
+      "text": "Пгут. Бюджет мы утвердили вчера."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 9963,
+      "end_ms": 10804,
+      "text": "Понятно."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 10804,
+      "end_ms": 13564,
+      "text": "Сроки зависят от поставщика.—"
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 13564,
+      "end_ms": 15724,
+      "text": "Сроки зависят от поставщика. —"
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 15684,
+      "end_ms": 17964,
+      "text": "Бюджет мы утвердили вчера."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 17964,
+      "end_ms": 21403,
+      "text": "Склад находится на другом конце города. — Точно."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 21403,
+      "end_ms": 23723,
+      "text": "Бюджет мы утвердили вчера."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 23684,
+      "end_ms": 25764,
+      "text": "— Бюджет мы утвердили вчера. —"
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 25764,
+      "end_ms": 28124,
+      "text": "Давайте перенесём совещание"
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 28161,
+      "end_ms": 34321,
+      "text": "— Завтра. — Нужно позвонить клиенту сегодня. Ага, ясно."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 31961,
+      "end_ms": 32761,
+      "text": "— Точно. —"
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 34321,
+      "end_ms": 36681,
+      "text": "Я отправлю отчёт до пятницы. —"
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 36641,
+      "end_ms": 37921,
+      "text": "Угу. — Ага,"
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 37921,
+      "end_ms": 40601,
+      "text": "ясно. — То. — Спасибо. —"
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 40601,
+      "end_ms": 41721,
+      "text": "Коне. —"
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 41720,
+      "end_ms": 42760,
+      "text": "Хорошо. —"
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 42760,
+      "end_ms": 43488,
+      "text": "Хшо"
+    }
+  ]
+}

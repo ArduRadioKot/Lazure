@@ -124,6 +124,7 @@ python3 tools/eval/evaluate.py --ref refs/ --hyp exports/ --timing timing.csv --
 | [docs/LIMITATIONS.md](docs/LIMITATIONS.md) | Ограничения, риски демонстрации, планы |
 | [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md) | Методика тестирования и результаты |
 | [docs/DEVELOPMENT_LOG.md](docs/DEVELOPMENT_LOG.md) | Журнал разработки: решения и найденные причины ошибок |
+| [docs/presentation/Lazure.pdf](docs/presentation/Lazure.pdf) | Презентация проекта (PDF) |
 | [artifacts/demo](artifacts/demo) | Демонстрация работы (видео) |
 | [artifacts/test-results](artifacts/test-results) | Результаты прогонов скрипта оценки |
 
@@ -141,6 +142,8 @@ tools/models/           манифест и загрузка моделей, э�
 tools/eval/             оценка WER / cpWER / DER / таймстемпов / RTF
 tools/bench/            синтетический бенчмарк диаризации
 docs/                   документация по шаблону хакатона
+  presentation/         презентация (PDF)
+  screenshots/          скриншоты для README
 artifacts/              демо и результаты тестов
 config/                 пример переменных для скриптов
 ```

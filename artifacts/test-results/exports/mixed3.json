@@ -1,0 +1,82 @@
+{
+  "transcript": [
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 195,
+      "end_ms": 4752,
+      "text": "Бюджет мы утвердили вчера. Нет."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 5420,
+      "end_ms": 6660,
+      "text": "Хорошо."
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 6660,
+      "end_ms": 9099,
+      "text": "Бюджет мы утвердили вчера."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 9099,
+      "end_ms": 11140,
+      "text": "Сроки зависят от поставщика."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 11140,
+      "end_ms": 12636,
+      "text": "Понятно Я"
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 12636,
+      "end_ms": 14320,
+      "text": "отправлю отчёт до пятницы"
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 14539,
+      "end_ms": 15779,
+      "text": "Точно."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 15779,
+      "end_ms": 17808,
+      "text": "Я отправлю отчёт до пятницы"
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 18011,
+      "end_ms": 19891,
+      "text": "Ага, ясно."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 19899,
+      "end_ms": 23915,
+      "text": "Нет. Да Сроки зависят от поставщика."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 23915,
+      "end_ms": 25675,
+      "text": "Точно Нужно"
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 25675,
+      "end_ms": 28074,
+      "text": "позвонить клиенту сегодня."
+    },
+    {
+      "speaker_id": "speaker_3",
+      "start_ms": 28300,
+      "end_ms": 28960,
+      "text": "Да"
+    }
+  ]
+}
