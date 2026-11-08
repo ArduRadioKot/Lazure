@@ -1,6 +1,23 @@
-# Lazure — нейро-стенографист для Android
+<h1 align="center">Lazure - нейро-стенографист для Android</h1>
+
+<p align="center">
+  <img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?logo=android&logoColor=white">
+  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?logo=kotlin&logoColor=white">
+  <img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/home.png" width="19%" alt="Главная">
+  <img src="docs/screenshots/transcript.png" width="19%" alt="Расшифровка с говорящими и временем">
+  <img src="docs/screenshots/summary.png" width="19%" alt="Конспект от локальной LLM">
+  <img src="docs/screenshots/chat.png" width="19%" alt="Чат по записи">
+  <img src="docs/screenshots/models.png" width="19%" alt="Модели на устройстве">
+</p>
+<p align="center"><sub>Главная · Расшифровка с говорящими и временем · Конспект · Чат по записи · Модели. Всё работает на устройстве, интернет не нужен.</sub></p>
 
 Решение команды для кейса **«Нейро-стенографист»** (Nuclear IT Hack, КСиТ × HEX.TEAM).
+
+[Быстрый старт](#быстрый-старт-для-проверки) · [Сборка](#сборка-из-исходников) · [Тесты](#тесты-и-оценка-качества) · [Документация](#документация)
 
 Lazure локально, **без интернета**, превращает аудиозапись разговора в структурированную расшифровку:
 
@@ -21,7 +38,7 @@ Lazure локально, **без интернета**, превращает а�
 | Временные метки реплик | Время токенов CTC, конец по следующему токену или концу речи по VAD | `SpeechPipeline.kt`, `TokenTiming` |
 | Отображает расшифровку | Плеер с волной, подсветка текущей реплики, переход по клику | `ui/recording/` |
 | Экспортирует в файл | JSON `{"transcript":[{speaker_id,start_ms,end_ms,text}]}` | `data/recording/TranscriptExport.kt` |
-| Всё на устройстве | Облачных API нет; сеть нужна только для необязательной загрузки других LLM | — |
+| Всё на устройстве | Облачных API нет; сеть нужна только для необязательной загрузки других LLM | - |
 
 Дополнительно реализовано:
 

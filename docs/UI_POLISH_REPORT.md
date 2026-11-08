@@ -1,4 +1,4 @@
-# Lazure — UI/UX-полировка
+# Lazure - UI/UX-полировка
 
 Дата: 2026-11-07. Изменены существующие Compose-компоненты. Отдельный демонстрационный интерфейс в приложение не добавлялся; сценарии импорта, записи, чата, моделей и PIN сохранены.
 
@@ -6,8 +6,8 @@
 
 | Область | Результат |
 |---|---|
-| Главные действия | Минимальная высота 116 dp вместо 140 dp: около 17% компактнее. В обычном режиме две равные колонки. При крупном шрифте и узком экране — одна колонка с горизонтальным содержимым и достаточной высотой для текста. |
-| Приоритет | Запись и импорт используют `primaryContainer` / `onPrimaryContainer`, модели и архив — спокойные нейтральные поверхности. |
+| Главные действия | Минимальная высота 116 dp вместо 140 dp: около 17% компактнее. В обычном режиме две равные колонки. При крупном шрифте и узком экране - одна колонка с горизонтальным содержимым и достаточной высотой для текста. |
+| Приоритет | Запись и импорт используют `primaryContainer` / `onPrimaryContainer`, модели и архив - спокойные нейтральные поверхности. |
 | Шапка | Остались Lazure и поиск; удалён дублирующий заголовок рабочего пространства и уменьшен верхний интервал. |
 | Недавние записи | Понятное пустое состояние с кратким сообщением и рабочей кнопкой «Начать запись», вызывающей существующий переход к записи. |
 | Нижняя навигация | Стандартная Material 3 NavigationBar без плавающей капсулы. Компонент владеет системным нижним inset, а Scaffold передаёт и потребляет свой padding один раз. При клавиатуре панель по-прежнему скрывается. |
@@ -21,28 +21,28 @@
 
 Пути относительно `src/mobile/android/src/main/`:
 
-- `java/com/rassvet/essential/ui/home/MeetingHomeScreen.kt` — карточки, приоритет, компактная шапка и пустое состояние.
-- `java/com/rassvet/essential/ui/EssentialApp.kt`, `ui/components/LazureNavigationBar.kt` — существующие маршруты и стандартная нижняя панель.
-- `java/com/rassvet/essential/ui/theme/Color.kt`, `Theme.kt`, `Type.kt`, `LazureIcons.kt` — палитры, роли текста и набор символов.
-- `java/com/rassvet/essential/ui/chat/ChatScreen.kt`, `ui/settings/SettingsScreen.kt`, `ui/home/ChatModelPickerSheet.kt` — адаптивная шапка, поля настроек, каталог.
-- `ui/recording/RecordingLibraryScreen.kt`, `ui/recording/LiveRecordingScreen.kt`, `ui/models/AIModelsScreen.kt`, `ui/security/PinScreens.kt` — согласованные символы и оформление существующих экранов.
-- `ui/markdown/CodeBlockCard.kt`, `ui/editor/MarkdownRenderer.kt`, `ui/components/ThinkingSlotLabel.kt` — символы в общих компонентах вывода чата.
-- `data/llm/ChatModelSelection.kt` — только локализованное представление карточек моделей.
-- `res/drawable/symbol_*.xml`, `res/values*/strings.xml`, `res/values*/meeting_strings.xml`, `res/values/colors.xml` — локальные символы, переводы и фон системной заставки.
-- `assets/licenses/material-symbols-LICENSE.txt` — Apache 2.0 для символов.
+- `java/com/rassvet/essential/ui/home/MeetingHomeScreen.kt` - карточки, приоритет, компактная шапка и пустое состояние.
+- `java/com/rassvet/essential/ui/EssentialApp.kt`, `ui/components/LazureNavigationBar.kt` - существующие маршруты и стандартная нижняя панель.
+- `java/com/rassvet/essential/ui/theme/Color.kt`, `Theme.kt`, `Type.kt`, `LazureIcons.kt` - палитры, роли текста и набор символов.
+- `java/com/rassvet/essential/ui/chat/ChatScreen.kt`, `ui/settings/SettingsScreen.kt`, `ui/home/ChatModelPickerSheet.kt` - адаптивная шапка, поля настроек, каталог.
+- `ui/recording/RecordingLibraryScreen.kt`, `ui/recording/LiveRecordingScreen.kt`, `ui/models/AIModelsScreen.kt`, `ui/security/PinScreens.kt` - согласованные символы и оформление существующих экранов.
+- `ui/markdown/CodeBlockCard.kt`, `ui/editor/MarkdownRenderer.kt`, `ui/components/ThinkingSlotLabel.kt` - символы в общих компонентах вывода чата.
+- `data/llm/ChatModelSelection.kt` - только локализованное представление карточек моделей.
+- `res/drawable/symbol_*.xml`, `res/values*/strings.xml`, `res/values*/meeting_strings.xml`, `res/values/colors.xml` - локальные символы, переводы и фон системной заставки.
+- `assets/licenses/material-symbols-LICENSE.txt` - Apache 2.0 для символов.
 
 Проверки:
 
-- `src/test/.../ui/home/HomePolishTest.kt` — семь Compose UI-проверок и локальные снимки.
-- `src/test/.../ui/theme/ColorContrastTest.kt` — контраст семи пар цветов статических тем, минимум 4,5:1 для текста.
-- `src/androidTest/.../ui/UiPolishDeviceTest.kt` — четыре UI-проверки на ARM64-эмуляторе.
-- `src/androidTest/.../ui/AppScreensSmokeTest.kt` — навигация реального `MainActivity` по текущим экранам.
-- `build.gradle.kts` — поддержка Compose UI-тестов в Robolectric; production-зависимости не менялись.
+- `src/test/.../ui/home/HomePolishTest.kt` - семь Compose UI-проверок и локальные снимки.
+- `src/test/.../ui/theme/ColorContrastTest.kt` - контраст семи пар цветов статических тем, минимум 4,5:1 для текста.
+- `src/androidTest/.../ui/UiPolishDeviceTest.kt` - четыре UI-проверки на ARM64-эмуляторе.
+- `src/androidTest/.../ui/AppScreensSmokeTest.kt` - навигация реального `MainActivity` по текущим экранам.
+- `build.gradle.kts` - поддержка Compose UI-тестов в Robolectric; production-зависимости не менялись.
 
 ## Результаты проверки
 
-- `./gradlew :app:assembleDebug :app:testDebugUnitTest` — успешно, 59 локальных тестов, 0 ошибок. Среди них 7 UI-тестов и тест контрастности.
-- `./gradlew :app:connectedDebugAndroidTest` — успешно: 9 тестов на ARM64 Android 13, 0 ошибок, включая переходы реального MainActivity через главную, архив, чат, настройки, установку PIN, модели и экран записи.
+- `./gradlew :app:assembleDebug :app:testDebugUnitTest` - успешно, 59 локальных тестов, 0 ошибок. Среди них 7 UI-тестов и тест контрастности.
+- `./gradlew :app:connectedDebugAndroidTest` - успешно: 9 тестов на ARM64 Android 13, 0 ошибок, включая переходы реального MainActivity через главную, архив, чат, настройки, установку PIN, модели и экран записи.
 - Главная с NavigationBar отрисована на ARM64 AVD processing-phone / Android 13, API 33. Проверены реальный viewport 320×640 dp внутри тестовой Activity, fontScale 1,0 и 1,6, статическая светлая/тёмная темы, EN/RU, доступность кнопки записи после прокрутки и работа её callback.
 - Robolectric дополнительно проверяет отсутствие обрезания заголовков, размеры карточек, области нажатия, заголовок чата при длинном имени модели и настройки с fontScale 1,6.
 - Изображения тестов просмотрены визуально. Крупный шрифт не принудительно ужимается: контент растёт и доступен через прокрутку.

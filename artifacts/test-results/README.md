@@ -1,6 +1,6 @@
 # Артефакты тестирования
 
-`results.csv` — вывод [`tools/eval/evaluate.py`](../../tools/eval/evaluate.py): по строке на запись и итог `TOTAL`.
+`results.csv` - вывод [`tools/eval/evaluate.py`](../../tools/eval/evaluate.py): по строке на запись и итог `TOTAL`.
 
 ```bash
 python3 tools/eval/evaluate.py --ref refs/ --hyp exports/ --timing timing.csv --csv artifacts/test-results/results.csv

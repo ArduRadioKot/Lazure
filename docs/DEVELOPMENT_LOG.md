@@ -1,9 +1,9 @@
-# Lazure — журнал разработки
+# Lazure - журнал разработки
 
 > Хронологический журнал этапов, замеров и найденных причин ошибок. Записи сохранены в том виде, в каком делались,
-> поэтому ранние разделы описывают состояние до появления ASR. Актуальное состояние — в [README](../README.md),
+> поэтому ранние разделы описывают состояние до появления ASR. Актуальное состояние - в [README](../README.md),
 > [ARCHITECTURE](ARCHITECTURE.md) и [LIMITATIONS](LIMITATIONS.md). После очистки репозитория (последний раздел)
-> `speech-decoder/scripts` и `speech-decoder/models` переехали в `tools/models`, `speech-decoder/bench` — в `tools/bench`.
+> `speech-decoder/scripts` и `speech-decoder/models` переехали в `tools/models`, `speech-decoder/bench` - в `tools/bench`.
 
 Updated: 2026-11-07
 
@@ -14,7 +14,7 @@ Updated: 2026-11-07
 - Never substitute mock transcript text or speakers for model inference. The app must disclose missing local models.
 - All speech and language inference must remain on-device. INTERNET is permitted only for optional local model downloads; the redesigned AI chat does not expose cloud inference.
 
-## Stage 0 — audit
+## Stage 0 - audit
 
 **Status: Completed.**
 
@@ -49,24 +49,24 @@ Updated: 2026-11-07
 
 ## Last verification
 
-- `./gradlew :app:assembleDebug` — passed.
-- `./gradlew :app:testDebugUnitTest` — passed, 41 tests.
-- `./gradlew :app:connectedDebugAndroidTest` — passed, 3 tests on ARM64 emulator.
+- `./gradlew :app:assembleDebug` - passed.
+- `./gradlew :app:testDebugUnitTest` - passed, 41 tests.
+- `./gradlew :app:connectedDebugAndroidTest` - passed, 3 tests on ARM64 emulator.
 - After stage 1: `./gradlew :app:assembleDebug` and `./gradlew :app:testDebugUnitTest` passed; Android instrumentation passed 4 tests, including 7→8 table/data preservation.
 - Current UI/recording pass: `./gradlew :app:assembleDebug` passed; `./gradlew :app:testDebugUnitTest` passed (44 tests); `./gradlew :app:connectedDebugAndroidTest` passed (4 tests on processing-phone API 33).
 - Latest APK installed and opened with `adb shell am start -n ru.myessentiality.essential/com.rassvet.essential.MainActivity`. No real audio import or microphone recording was performed in this verification.
 
-## Stage 3 — main UI report
+## Stage 3 - main UI report
 
 **Status: Partial.** The app now opens to a branded Lazure workspace using the existing Mont typography, cyan/neutral theme, Material 3 shapes and edge-to-edge handling. Home actions route to local recording, SAF import, model catalog and Vault. The bottom bar contains Home, Vault, AI and Settings. Recent recordings are read from Room. The old notes workspace remains reachable from Home.
 
 Vault supports SAF import, Room-backed search/status filters, date/title sorting, rename and confirmed delete, audio playback, transcript segment seek, text correction with originalText preservation, speaker display-name edits and exact-schema JSON export. Retry/reprocess and waveform/current-segment highlighting remain. AI still uses the existing general ChatScreen; no recording-scoped chat or summary is claimed.
 
-## Stage 4 — live capture report
+## Stage 4 - live capture report
 
 **Status: Partial.** Live requests `RECORD_AUDIO`, records local AAC in an M4A file, shows elapsed time, supports pause/resume on Android N+ and stop/save, then registers the audio as an `awaiting_asr` Room recording and returns to Vault. The same `recordings/` app-private directory is used by imports and live audio. Capture remains owned by the Compose screen: leaving the screen or process death can interrupt or lose an unfinished capture. A foreground service and on-device microphone exercise are still required.
 
-## Frontend consistency update — 2026-11-07
+## Frontend consistency update - 2026-11-07
 
 Latest requested UI adjustment: Live now uses the same neutral card treatment as the other Home actions; the global microphone FAB has been removed. The static light/dark Material 3 palettes explicitly define primary, secondary, tertiary, container, inverse and surface roles around #00CED1 and turquoise shades, removing inherited default purple roles. Android Dynamic Color continues to follow the system palette when enabled. `./gradlew :app:assembleDebug` passed after this adjustment; no device visual check was performed.
 
@@ -83,7 +83,7 @@ Latest requested UI adjustment: Live now uses the same neutral card treatment as
 
 **Next:** Resume concrete offline ASR and diarization implementation; then exercise the UI on an ARM64 device/emulator and validate model download and microphone flows. ASR, diarization, recording-scoped summary and RAG remain incomplete.
 
-## Settings and PIN update — 2026-11-07
+## Settings and PIN update - 2026-11-07
 
 - Removed Account/subscription and Privacy/Policy/Terms blocks from Settings, including the account refresh effect.
 - Changed user-facing storage/repository naming to Storage in onboarding, settings and Home/navigation. Internal database paths and repository class names stay compatible.
@@ -94,7 +94,7 @@ Latest requested UI adjustment: Live now uses the same neutral card treatment as
 
 Verification for this update: `./gradlew :app:testDebugUnitTest :app:assembleDebug` passed (50 unit tests, including 6 PIN tests; 0 failures/errors). The repository tests use a test HMAC key and a real temporary DataStore; they do not establish Android Keystore/device behavior. No new device visual or lifecycle test is claimed.
 
-## Home sizing, chat IME and motion correction — 2026-11-07
+## Home sizing, chat IME and motion correction - 2026-11-07
 
 - Home actions now use two equal-weight columns and an explicit 156 dp height for all four cards, replacing the nested adaptive lazy grid.
 - The root Scaffold owns IME padding and hides bottom navigation while the keyboard is open. Its padding is consumed before child screens lay out, preventing duplicate bottom insets; the chat composer sits above the keyboard.
@@ -103,13 +103,13 @@ Verification for this update: `./gradlew :app:testDebugUnitTest :app:assembleDeb
 - Static light-theme accent is now #007F82 with white foreground; dark theme uses #41B7BA with a dark foreground. Dynamic Color remains available. Saved Dynamic Color choice is no longer overwritten on every launch.
 - `./gradlew :app:assembleDebug :app:testDebugUnitTest` passed (50 tests). Keyboard geometry and frame smoothness still require device validation; no FPS/device visual result is claimed. Updated installable APK is placed in `dist/Lazure-debug.apk`.
 
-## PIN keypad and compact Home cards — 2026-11-07
+## PIN keypad and compact Home cards - 2026-11-07
 
 Replaced the PIN text field with a Material 3 numeric keypad (0–9, backspace), masked digit indicators and explicit confirmation. Setup, repeated entry, unlocking and disabling share this UI and the existing PIN verifier; the system keyboard is not needed. The form scrolls on short screens, keypad buttons have 54 dp touch height, and accessibility labels expose entered-digit count without exposing the PIN. Home action cards now have equal 140 dp height (previously 156 dp). `./gradlew :app:assembleDebug` passed; no device visual check is claimed. Updated APK: `dist/Lazure-debug.apk`.
 
 Splash branding adjustment: replaced the microphone and its rounded background with the actual application logo from `ic_splash_logo`, retaining the entrance scale animation and theme-aware contrast. `./gradlew :app:assembleDebug` passed; `dist/Lazure-debug.apk` updated.
 
-## PIN length-aware automatic unlock — 2026-11-07
+## PIN length-aware automatic unlock - 2026-11-07
 
 - PIN setup now saves digit count alongside the salted, Keystore-keyed verifier. Login renders exactly 4 or 6 dots and automatically verifies when the last digit is entered; the login/disable forms have no confirmation button. Setup retains its deliberate repeat/confirmation step.
 - Existing PINs without length metadata have a one-time 4/6 length selector. A successful verification persists the length; a failed attempt does not migrate metadata or bypass cooldown. No PIN reset or change is required.
@@ -117,13 +117,13 @@ Splash branding adjustment: replaced the microphone and its rounded background w
 - Background completion cannot mark the app unlocked while the activity is stopped.
 - `./gradlew :app:testDebugUnitTest :app:assembleDebug` passed: 51 tests, 0 failures/errors. Tests cover both persisted lengths and legacy length migration; no device UI verification is claimed. Updated signed debug APK: `dist/Lazure-debug.apk`.
 
-## Retiring Essential notes and light-card contrast — 2026-11-07
+## Retiring Essential notes and light-card contrast - 2026-11-07
 
 Removed notes, markdown editor, graph, legacy note-folder onboarding and note-storage management destinations from the live app navigation. New installs open the audio workspace without selecting/creating a notes folder. Removed Home notes entry and notes-specific settings. The AI chat no longer passes any note storage URI or enables note retrieval; its starter prompt and system identity describe conversations rather than note creation. Legacy Room note tables and shared rendering/retrieval code are retained for data compatibility; user files were not deleted.
 
 Static light theme now has a distinct tinted `surfaceContainerLow` and stronger outline tokens. Home action and recent-recording cards have a consistent 1 dp theme-aware border, so they remain visible with Dynamic Color disabled. `./gradlew :app:assembleDebug :app:testDebugUnitTest` passed (51 tests). Device visual validation remains outstanding. Updated installable APK: `dist/Lazure-debug.apk`.
 
-## Full UI/UX polish — 2026-11-07
+## Full UI/UX polish - 2026-11-07
 
 **Status: Completed for the requested UI scope.** Existing Compose screens remain in use. Home action cards have a 116 dp minimum instead of 140 dp (about 17% smaller); recording/import use primary containers, while models/archive use neutral surfaces. At narrow widths with large fonts they reflow to one column rather than clipping words. Removed the duplicate workspace headline and compacted the empty state with a real Start Recording action.
 
@@ -134,7 +134,7 @@ Verification: `:app:assembleDebug` and 59 local tests passed, including seven Co
 Full changed-file list, screenshot provenance and verification scope: `docs/UI_POLISH_REPORT.md`. Updated installable signed debug APK: `dist/Lazure-debug.apk`.
 
 
-## Stage 2 update — real offline speech pipeline (2026-11-07)
+## Stage 2 update - real offline speech pipeline (2026-11-07)
 
 **Status: Partial → working end to end on the ARM64 emulator.**
 
@@ -146,13 +146,13 @@ Full changed-file list, screenshot provenance and verification scope: `docs/UI_P
 - Not done: DTLN denoise, MossFormer separation and ECAPA from speech-decoder (no verified ONNX exports; CAM++ is the embedding stand-in), WER/DER/RTF on a labelled set, real microphone test, Summary / Ask-AI on recordings, foreground recording service. No accuracy numbers are claimed.
 - Re-check: `adb shell am instrument -w -e class com.rassvet.essential.data.recording.SpeechPipelineDeviceTest ru.myessentiality.essential.test/androidx.test.runner.AndroidJUnitRunner` (push wavs to `files/eval` via run-as).
 
-## Stages 6–7 update — recording summary and Ask AI (2026-11-07)
+## Stages 6–7 update - recording summary and Ask AI (2026-11-07)
 
 - `RecordingAi` (map-reduce summary over ~3000-char chunks, TF-IDF retrieval with minute boost, [m:ss] citations) runs through `ChatEngine.completeLocalIsolated`, which skips vault and web research so transcript text never leaves the device.
 - Recording detail now has Summarize (saved to `recording_summaries`, shown as Markdown) and Ask AI (bottom sheet; source chips seek the audio). Both need a selected local LLM.
-- Verified: build, unit tests `RecordingAiTest` (timecodes, retrieval) pass; app launches without crash. NOT verified: actual LLM output quality — no LLM is downloaded on the emulator. Ask-AI history is in-memory only (no message table yet).
+- Verified: build, unit tests `RecordingAiTest` (timecodes, retrieval) pass; app launches without crash. NOT verified: actual LLM output quality - no LLM is downloaded on the emulator. Ask-AI history is in-memory only (no message table yet).
 
-## Stage 4 update — foreground recording service (2026-11-07)
+## Stage 4 update - foreground recording service (2026-11-07)
 
 - `RecordingService` (foreground, type microphone, notification) owns MediaRecorder; `CaptureSession` exposes state/elapsed/level to `LiveRecordingScreen`, which now shows a level bar and restores state after leaving/returning.
 - Verified on emulator: start → service foreground → app sent to background → returned with timer continuing (0:18) → Stop → recording registered, processed through the pipeline and shown as "Transcript ready" (the emulator mic is silent, so the transcript is empty; no speech was actually recorded).
@@ -245,10 +245,10 @@ Full changed-file list, screenshot provenance and verification scope: `docs/UI_P
 
 - Удалён весь облачный код, унаследованный от исходного приложения заметок: REST-клиент, авторизация, подписки, синхронизация, клиенты Gemini, OpenAI-совместимых API и Timeweb, а также веб-поиск DuckDuckGo/wttr.in в чате (он был включён по умолчанию). `ChatEngine` теперь только локальный. Из `BuildConfig` убраны `ALLOW_DIRECT_CLOUD` и ключи API.
 - Удалены недостижимые экраны (заметки, редактор, граф, онбординг хранилища, авторизация), около 1200 неиспользуемых строк в трёх локалях, вендорная копия `llama.cpp` (2598 файлов, 149 МБ; в CMake не собиралась), прототип `speech-decoder` (не компилировался) и скрипты интеграции с локальными путями.
-- **Временные метки:** конец реплики раньше считался как начало последнего токена + 80 мс, и реплика обрезалась на длительность последнего слова. Теперь токен заканчивается там, где начинается следующий токен того же VAD-сегмента, а последний — где VAD фиксирует конец речи (`TokenTiming`, ограничение 80–1500 мс). Unit-тест: `TokenTimingTest`.
+- **Временные метки:** конец реплики раньше считался как начало последнего токена + 80 мс, и реплика обрезалась на длительность последнего слова. Теперь токен заканчивается там, где начинается следующий токен того же VAD-сегмента, а последний - где VAD фиксирует конец речи (`TokenTiming`, ограничение 80–1500 мс). Unit-тест: `TokenTimingTest`.
 - **Скорость:** в Room добавлена колонка `processing_ms` (миграция 10→11). Карточка записи показывает «Обработано за X с · RTF Y», в logcat пишется строка с RTF.
 - **Release-сборка:** добавлены keep-правила R8 для sherpa-onnx и ONNX Runtime (JNI ищет поля и классы по имени, без правил распознавание в release упало бы). Release подписывается debug-ключом, если не задан свой. Выбор ABI: `-Plazure.abis=arm64-v8a`.
 - **CI:** исправлены версия NDK (27.1, как в сборке), пути к APK; добавлены самотест скрипта оценки и ручная сборка с моделями.
 - **Оценка:** `tools/eval/evaluate.py` считает WER, cpWER, DER, ошибки границ и RTF по JSON в формате конкурса.
-- Проверка: `assembleDebug`, `assembleRelease -Plazure.abis=arm64-v8a`, `compileDebugAndroidTestKotlin` собираются; `testDebugUnitTest` — 53 теста, 0 ошибок. На устройстве после этих правок приложение ещё не запускалось.
+- Проверка: `assembleDebug`, `assembleRelease -Plazure.abis=arm64-v8a`, `compileDebugAndroidTestKotlin` собираются; `testDebugUnitTest` - 53 теста, 0 ошибок. На устройстве после этих правок приложение ещё не запускалось.
 
