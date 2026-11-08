@@ -1,0 +1,58 @@
+{
+  "transcript": [
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 2452,
+      "end_ms": 5474,
+      "text": "Слушай, я сегодня опоздал на работ нау .работу, потому что"
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 4874,
+      "end_ms": 6572,
+      "text": "пять проспал—"
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 6532,
+      "end_ms": 8972,
+      "text": "Да нет, я вообще вовремя встал, просто..."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 8972,
+      "end_ms": 10652,
+      "text": "Автобус не приехал?"
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 10652,
+      "end_ms": 14212,
+      "text": "Да ты дай пого договориться. Я вышел из дома, смотрю..."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 14212,
+      "end_ms": 15412,
+      "text": "— Ключи забыл? —"
+    },
+    {
+      "speaker_id": "speaker_1",
+      "start_ms": 15372,
+      "end_ms": 19412,
+      "text": "Нет, машину угнали. Да я шучу, просрал просто."
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 16692,
+      "end_ms": 17652,
+      "text": "— Серьёзно? —"
+    },
+    {
+      "speaker_id": "speaker_2",
+      "start_ms": 19412,
+      "end_ms": 21040,
+      "text": "— Я так и знал"
+    }
+  ]
+}

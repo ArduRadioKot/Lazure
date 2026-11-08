@@ -5,3 +5,6 @@
 
 ## Length-independent processing
 Audio never lives on the heap any more: the decoder writes PCM to a temp file (`Pcm`), high-pass, normalisation, DTLN (5-min pieces) and VAD stream through 60 s chunks, and only the span being recognised/embedded is read back. The 30-minute noise-suppression cut-off was removed. Emulator (2 GB RAM): 3 h processed in 1502 s, no OOM; short clips give identical transcripts. Diarization (6-min pieces) is about 60 % of the time on long files. Speaker quality on real multi-hour meetings is unmeasured (test file = repeated 20-min clip).
+
+## Speakers from diarizer turns (phone recording of two men, interruptions)
+Real 22 s recording (two men, 4 interruptions, voices cosine 0.6 apart at sentence level): the app found 4 speakers and no overlap, because sentence embeddings mixed both voices. New `turnSpeakers`: embed the part of each diarizer turn that no other speaker overlaps (A-A 0.48-0.73, A-B <= 0.34), merge ids >= 0.68, fold ids with < 1.5 s into the nearest, accept only if all remaining voices are <= 0.5 apart, else the old sentence method runs. Diarizer cuts are verified with the same turn embeddings. Result on the recording: 2 speakers, 4 interruptions marked, the overlapped words recovered by separation. Synthetic bench (8 files): DER 8.0 -> 6.9 %, cpWER 20.3 -> 17.4 %, WER 9.1 -> 9.4 %. One recording is not a benchmark.

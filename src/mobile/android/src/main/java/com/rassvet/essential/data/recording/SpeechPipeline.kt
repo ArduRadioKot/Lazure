@@ -187,6 +187,8 @@ data class PipelineOptions(
     val shortUnitSimilarity: Float = 0.45f,
     /** Weight of the diarizer-id purity prior when labelling short replies. */
     val diarizerPriorWeight: Float = 0.3f,
+    /** Label speakers from the diarizer's own turns when their voices are clearly separable (see [SpeechPipeline.turnSpeakers]). */
+    val turnSpeakers: Boolean = true,
 )
 
 /** Matches separated sources to diarization speakers with speaker embeddings (CAM++), falling back to energy. */
@@ -311,6 +313,7 @@ class SpeechPipeline(private val context: Context) {
             // Words inside overlap regions are blends of voices and are left out of the embeddings.
             onProgress("speakers", 0f)
             val refined = if (options.refineSpeakers) {
+                (if (options.turnSpeakers && options.numSpeakers <= 0) runCatching { turnSpeakers(samples, turns) }.onFailure { android.util.Log.e("SpeechPipeline", "turn speakers failed", it) }.getOrNull() else null) ?:
                 runCatching { refineSpeakers(samples, tokens.filter { t -> diarRegions.none { t.ms in it.startMs..it.endMs } }, options, turns.map { it.speaker }.distinct().size, turns, utterances.map { it.start * 1000 / SpeechModelPaths.SAMPLE_RATE }) }
                     .onFailure { android.util.Log.e("SpeechPipeline", "speaker refinement failed", it) }.getOrNull()
             } else null
@@ -441,8 +444,11 @@ class SpeechPipeline(private val context: Context) {
         // though its ids over-split) and GigaAM's dialogue dash. Each one is verified below before it is used.
         val st = turns.sortedBy { it.start }
         val diarCuts = ArrayList<Long>()
-        for (i in 0 until st.size - 1) if (st[i].speaker != st[i + 1].speaker && st[i + 1].start - st[i].end <= 0.6f)
-            diarCuts += (((st[i].end + st[i + 1].start) / 2f) * 1000).toLong()
+        val diarCutPair = HashMap<Long, Pair<Int, Int>>()
+        for (i in 0 until st.size - 1) if (st[i].speaker != st[i + 1].speaker && st[i + 1].start - st[i].end <= 0.6f) {
+            val c = (((st[i].end + st[i + 1].start) / 2f) * 1000).toLong()
+            diarCuts += c; diarCutPair[c] = i to i + 1
+        }
         val dashTimes = ArrayList<Long>()
         // 1) sentence units: cut at sentence ends and pauses > 0.35 s
         data class Raw(var start: Long, var end: Long)
@@ -464,6 +470,19 @@ class SpeechPipeline(private val context: Context) {
             fun dot(a: FloatArray, b: FloatArray): Float { var d = 0f; for (i in a.indices) d += a[i] * b[i]; return d }
             fun embedSpan(a: Long, b: Long): FloatArray? =
                 matcher.embedShort(samples.floats((a * 16).toInt(), minOf((b * 16).toInt(), (a * 16).toInt() + 15 * 16000)))?.let { norm(it) }
+            // A diarizer turn is one voice, so its own embedding (the part not overlapped by another speaker) is a far
+            // cleaner voice sample than a sentence that may contain several speakers. Sentence-level checks rejected real
+            // speaker changes when two voices were similar (cosine 0.6), turn-level ones separate them (<= 0.35 here).
+            val turnEmb = st.map { t ->
+                var a0 = t.start; var b0 = t.end
+                for (x in st) if (x !== t && x.speaker != t.speaker) { if (x.start <= a0 && x.end > a0) a0 = x.end; if (x.start < b0 && x.end >= b0) b0 = x.start }
+                if (b0 - a0 >= 0.5f) matcher.embedShort(DspChain.floats(samples, (a0 * 16000).toInt(), (b0 * 16000).toInt()))?.let { norm(it) } else null
+            }
+            val cutOk = HashMap<Long, Boolean>()
+            for ((c, pr) in diarCutPair) {
+                val x = turnEmb[pr.first]; val y = turnEmb[pr.second]
+                cutOk[c] = x == null || y == null || dot(x, y) < 0.5f
+            }
             // 2) verified cuts inside a unit. A piece of at least a second on both sides must sound like two different people
             // (similarity < 0.55 for a diarizer cut, < 0.65 for a dash); next to a reply shorter than a second the embedding
             // is useless and the cut is taken on the evidence of the cue alone.
@@ -477,7 +496,7 @@ class SpeechPipeline(private val context: Context) {
                     if (c - from < 250 || r.end - c < 250) continue
                     val nextCut = cands.drop(idx + 1).firstOrNull { it.first - c >= 250 && r.end - it.first >= 250 }?.first ?: r.end
                     val left = c - from; val right = nextCut - c
-                    val accept = if (left >= 1000 && right >= 1000) {
+                    val accept = if (c in cutOk) cutOk[c] == true else if (left >= 1000 && right >= 1000) {
                         val e1 = embedSpan(from, c); val e2 = embedSpan(c, nextCut)
                         e1 == null || e2 == null || dot(e1, e2) < thr
                     } else true
@@ -618,6 +637,70 @@ class SpeechPipeline(private val context: Context) {
             val result = units.indices.map { SpeakerUnit(units[it].start, units[it].end, finalId[label[it]] ?: 0) }
             val centroids = order.filter { c -> c in cents.indices }.associate { c -> finalId[c]!! to cents[c] }
             return Refined(result, centroids)
+        } finally { matcher.close() }
+    }
+
+
+    /**
+     * Speakers from the diarizer's turns. A turn is one voice, so the part of it that no other speaker overlaps is a clean
+     * voice sample; on a phone recording of two men the sentence-level embeddings of [refineSpeakers] mixed both voices and
+     * merged them into one speaker while turn-level ones were 0.05-0.34 apart (same speaker 0.48-0.73). The diarizer ids are
+     * merged when their voices are alike (>= 0.68) and ids with under 1.5 s of clean speech are folded into the nearest voice; if the
+     * remaining voices are not clearly different (> 0.5) or an id has no clean sample, null is returned and the
+     * sentence-level method decides. Units are the turns, each lasting until the next turn starts.
+     */
+    private fun turnSpeakers(samples: Pcm, turns: List<com.k2fsa.sherpa.onnx.OfflineSpeakerDiarizationSegment>): Refined? {
+        val st = turns.sortedBy { it.start }
+        if (st.size < 3 || st.map { it.speaker }.distinct().size < 2) return null
+        val matcher = SpeakerMatcher(context)
+        try {
+            fun norm(v: FloatArray): FloatArray { val n = Math.sqrt(v.sumOf { (it * it).toDouble() }).toFloat() + 1e-9f; return FloatArray(v.size) { v[it] / n } }
+            fun dot(a: FloatArray, b: FloatArray): Float { var d = 0f; for (i in a.indices) d += a[i] * b[i]; return d }
+            val emb = ArrayList<FloatArray?>(); val dur = HashMap<Int, Float>()
+            for (t in st) {
+                var a0 = t.start; var b0 = t.end
+                for (x in st) if (x !== t && x.speaker != t.speaker) { if (x.start <= a0 && x.end > a0) a0 = x.end; if (x.start < b0 && x.end >= b0) b0 = x.start }
+                val e = if (b0 - a0 >= 0.5f) matcher.embedShort(samples.floats((a0 * 16000).toInt(), (b0 * 16000).toInt()))?.let { norm(it) } else null
+                emb += e
+                if (e != null) dur.merge(t.speaker, b0 - a0, Float::plus)
+            }
+            val total = HashMap<Int, Float>(); for (t in st) total.merge(t.speaker, t.end - t.start, Float::plus)
+            if (total.any { (id, d) -> d >= 1.0f && id !in dur }) return null
+            val groups = HashMap<Int, MutableList<Int>>()          // group -> diarizer ids
+            val sum = HashMap<Int, FloatArray>(); val gdur = HashMap<Int, Float>()
+            for (id in dur.keys) {
+                groups[id] = mutableListOf(id); gdur[id] = dur[id]!!
+                val acc = FloatArray(emb.first { it != null }!!.size)
+                for ((i, t) in st.withIndex()) if (t.speaker == id) emb[i]?.let { e -> for (k in e.indices) acc[k] += e[k] }
+                sum[id] = acc
+            }
+            fun cen(g: Int) = norm(sum[g]!!)
+            fun merge(from: Int, into: Int) {
+                groups[into]!!.addAll(groups.remove(from)!!); gdur[into] = gdur[into]!! + gdur.remove(from)!!
+                val a = sum[into]!!; val b = sum.remove(from)!!; for (k in a.indices) a[k] += b[k]
+            }
+            while (groups.size > 1) {
+                val g = groups.keys.toList(); var bi = -1; var bj = -1; var bs = -2f
+                for (x in g) for (y in g) if (x < y) { val sc = dot(cen(x), cen(y)); if (sc > bs) { bs = sc; bi = x; bj = y } }
+                if (bs >= 0.68f) { android.util.Log.i("SpeechPipeline", "turn speakers: merge $bj -> $bi (${"%.2f".format(bs)})"); merge(bj, bi); continue }
+                val tiny = g.filter { gdur[it]!! < 1.5f }.minByOrNull { gdur[it]!! } ?: break
+                val target = g.filter { it != tiny }.maxByOrNull { dot(cen(tiny), cen(it)) }!!
+                val sc = dot(cen(tiny), cen(target))
+                if (sc < 0.15f) break
+                android.util.Log.i("SpeechPipeline", "turn speakers: absorb $tiny (${"%.1f".format(gdur[tiny])} s) -> $target (${"%.2f".format(sc)})")
+                merge(tiny, target)
+            }
+            if (groups.size < 2) return null
+            val g = groups.keys.toList()
+            for (x in g) for (y in g) if (x < y && dot(cen(x), cen(y)) > 0.5f) return null
+            val order = st.map { t -> groups.entries.first { t.speaker in it.value }.key }.distinct()
+            val finalOf = order.withIndex().associate { (n, gk) -> gk to n }
+            val idToFinal = HashMap<Int, Int>(); for ((gk, ids) in groups) for (id in ids) idToFinal[id] = finalOf[gk]!!
+            val units = st.mapIndexed { i, t ->
+                SpeakerUnit((t.start * 1000).toLong(), if (i + 1 < st.size) maxOf((st[i + 1].start * 1000).toLong(), (t.start * 1000).toLong() + 1) else (t.end * 1000).toLong(), idToFinal[t.speaker]!!)
+            }
+            android.util.Log.i("SpeechPipeline", "turn speakers: ${groups.size} from ${st.map { it.speaker }.distinct().size} diarizer ids " + groups.entries.joinToString { "${finalOf[it.key]}=${it.value}" })
+            return Refined(units, groups.keys.associate { finalOf[it]!! to cen(it) })
         } finally { matcher.close() }
     }
 

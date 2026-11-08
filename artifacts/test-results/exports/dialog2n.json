@@ -31,7 +31,7 @@
       "text": "Нужнозвоть клиенту сегодня."
     },
     {
-      "speaker_id": "speaker_3",
+      "speaker_id": "speaker_2",
       "start_ms": 15060,
       "end_ms": 17860,
       "text": "Встреча начнётся в 10:00 утра."
@@ -43,7 +43,7 @@
       "text": "СШплат находится на другом конце города."
     },
     {
-      "speaker_id": "speaker_3",
+      "speaker_id": "speaker_2",
       "start_ms": 21540,
       "end_ms": 23819,
       "text": "Сроки зависят от поставщика."
@@ -55,7 +55,7 @@
       "text": "СШплат находится на другом конце города Я"
     },
     {
-      "speaker_id": "speaker_3",
+      "speaker_id": "speaker_2",
       "start_ms": 27768,
       "end_ms": 31269,
       "text": "отправлю отчёт до пятницы."
@@ -73,7 +73,7 @@
       "text": "Сларугом конце города."
     },
     {
-      "speaker_id": "speaker_3",
+      "speaker_id": "speaker_2",
       "start_ms": 39768,
       "end_ms": 42008,
       "text": "С повщика."
@@ -85,7 +85,7 @@
       "text": "Договор уже подписан обеимиронами."
     },
     {
-      "speaker_id": "speaker_3",
+      "speaker_id": "speaker_2",
       "start_ms": 45729,
       "end_ms": 47534,
       "text": "Сроки зависят от поставщика."
