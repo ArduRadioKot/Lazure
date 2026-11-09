@@ -12,6 +12,9 @@ on:
         type: boolean
         default: false
 
+env:
+  WITH_MODELS: ${{ github.event_name == 'workflow_dispatch' && inputs.with_models || false }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -52,15 +55,15 @@ jobs:
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 
       - name: Debug APK (no models; for UI and build checks)
-        if: ${{ !inputs.with_models }}
+        if: ${{ !env.WITH_MODELS }}
         run: ./gradlew :app:assembleDebug --stacktrace
 
       - name: Download models and bundled LLM
-        if: ${{ inputs.with_models }}
+        if: ${{ env.WITH_MODELS }}
         run: bash tools/models/fetch_models.sh
 
       - name: Release APK with models (arm64-v8a)
-        if: ${{ inputs.with_models }}
+        if: ${{ env.WITH_MODELS }}
         run: ./gradlew :app:assembleRelease -Plazure.abis=arm64-v8a --stacktrace
 
       - name: Upload unit test reports
@@ -74,6 +77,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.with_models && 'lazure-release-arm64' || 'lazure-debug-no-models' }}
+          name: ${{ env.WITH_MODELS && 'lazure-release-arm64' || 'lazure-debug-no-models' }}
           path: src/mobile/android/build/outputs/apk/*/*.apk
           if-no-files-found: error
