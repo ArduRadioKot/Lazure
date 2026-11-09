@@ -94,6 +94,15 @@ bash tools/models/fetch_models.sh
 
 Это release-APK для телефона: R8, только arm64. Без своего ключа он подписывается debug-ключом. Свой ключ задаётся в `local.properties` полями `lazure.storeFile`, `lazure.storePassword`, `lazure.keyAlias`, `lazure.keyPassword`. Результат: `src/mobile/android/build/outputs/apk/release/app-release.apk`.
 
+Чтобы опубликовать APK в GitHub Releases, создайте и отправьте новый тег версии после коммита с нужным кодом:
+
+```bash
+git tag v1.4.0
+git push origin v1.4.0
+```
+
+Подставьте версию приложения из `src/mobile/android/build.gradle.kts`. Workflow скачает модели, соберёт arm64 release APK и создаст GitHub Release с автоматически сформированными заметками. Теги с суффиксом, например `v1.4.0-rc1`, будут помечены как предварительные релизы.
+
 ```bash
 ./gradlew :app:assembleDebug
 ```

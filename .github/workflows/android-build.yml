@@ -3,6 +3,7 @@ name: Android build and tests
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -13,12 +14,14 @@ on:
         default: false
 
 env:
-  WITH_MODELS: ${{ github.event_name == 'workflow_dispatch' && inputs.with_models || false }}
+  WITH_MODELS: ${{ (github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref_name, 'v')) || (github.event_name == 'workflow_dispatch' && inputs.with_models) }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,15 +59,15 @@ jobs:
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 
       - name: Debug APK (no models; for UI and build checks)
-        if: ${{ !env.WITH_MODELS }}
+        if: ${{ env.WITH_MODELS != 'true' }}
         run: ./gradlew :app:assembleDebug --stacktrace
 
       - name: Download models and bundled LLM
-        if: ${{ env.WITH_MODELS }}
+        if: ${{ env.WITH_MODELS == 'true' }}
         run: bash tools/models/fetch_models.sh
 
       - name: Release APK with models (arm64-v8a)
-        if: ${{ env.WITH_MODELS }}
+        if: ${{ env.WITH_MODELS == 'true' }}
         run: ./gradlew :app:assembleRelease -Plazure.abis=arm64-v8a --stacktrace
 
       - name: Upload unit test reports
@@ -75,9 +78,41 @@ jobs:
           path: src/mobile/android/build/reports/tests/testDebugUnitTest
           if-no-files-found: ignore
 
-      - name: Upload APK
+      - name: Upload release APK artifact
+        if: ${{ env.WITH_MODELS == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.WITH_MODELS && 'lazure-release-arm64' || 'lazure-debug-no-models' }}
-          path: src/mobile/android/build/outputs/apk/*/*.apk
+          name: lazure-release-arm64
+          path: src/mobile/android/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
+
+      - name: Upload debug APK artifact
+        if: ${{ env.WITH_MODELS != 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lazure-debug-no-models
+          path: src/mobile/android/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+  publish-release:
+    needs: build
+    if: ${{ needs.build.result == 'success' && github.ref_type == 'tag' && startsWith(github.ref_name, 'v') && (github.event_name == 'push' || inputs.with_models) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: lazure-release-arm64
+          path: release
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Lazure ${{ github.ref_name }}
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          fail_on_unmatched_files: true
+          files: release/app-release.apk
